@@ -7,27 +7,51 @@
 
 namespace mead {
 	enum class TokenType {
-		Floating, Integer, String, Identifier,
+		FloatingLiteral, IntegerLiteral, StringLiteral,
+		Identifier,
+	};
+
+	struct SourceLocation {
+		size_t line{};
+		size_t column{};
+
+		SourceLocation(size_t line, size_t column);
 	};
 
 	struct Token {
 		TokenType type;
 		std::string value;
+		SourceLocation location;
 
-		Token(TokenType type, std::string value);
+		Token(TokenType type, std::string value, SourceLocation location);
 	};
 
 	struct LexerRule {
 		TokenType type;
 		bool succeeded = false;
-		const re2::RE2 *regex;
 		std::string match;
 
-		explicit LexerRule(const re2::RE2 *regex, TokenType type);
+		LexerRule(TokenType type);
+		virtual ~LexerRule();
 
-		bool attempt(std::string_view input);
 		explicit operator bool() const;
 		bool operator<(const LexerRule &) const;
+		virtual bool attempt(std::string_view input) = 0;
+		void reset();
+	};
+
+	struct RegexLexerRule : LexerRule {
+		const re2::RE2 *regex;
+
+		RegexLexerRule(TokenType type, const re2::RE2 *regex);
+		bool attempt(std::string_view input) final;
+	};
+
+	struct LiteralLexerRule : LexerRule {
+		std::string literal;
+
+		LiteralLexerRule(TokenType type, std::string_view literal);
+		bool attempt(std::string_view input) final;
 	};
 
 	class Lexer {
@@ -43,14 +67,33 @@ namespace mead {
 			bool next(std::string_view &);
 
 		private:
-			static const LexerRule floatingRule;
-			static const LexerRule integerRule;
-			static const LexerRule stringRule;
-			static const LexerRule identifierRule;
+			SourceLocation currentLocation{1, 1};
 
-			std::vector<LexerRule> getRules();
+			std::vector<LexerRule *> getRules();
+			void advance(std::string_view);
+			std::string_view advanceWhitespace(std::string_view);
+			void advanceLine();
+			void advanceColumn();
+
+			RegexLexerRule floatingRule;
+			RegexLexerRule integerRule;
+			RegexLexerRule stringRule;
+			RegexLexerRule identifierRule;
 	};
 }
+
+template <>
+struct std::formatter<mead::SourceLocation> {
+	formatter() = default;
+
+	constexpr auto parse(std::format_parse_context &ctx) {
+		return ctx.begin();
+	}
+
+	auto format(const auto &location, std::format_context &ctx) const {
+		return std::format_to(ctx.out(), "[{}:{}]", location.line, location.column);
+	}
+};
 
 template <>
 struct std::formatter<mead::Token> {
@@ -61,6 +104,6 @@ struct std::formatter<mead::Token> {
 	}
 
 	auto format(const auto &token, std::format_context &ctx) const {
-		return std::format_to(ctx.out(), "({}, \"{}\")", int(token.type), token.value);
+		return std::format_to(ctx.out(), "({}: \"{}\" @ {})", int(token.type), token.value, token.location);
 	}
 };

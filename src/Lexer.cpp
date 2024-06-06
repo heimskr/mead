@@ -6,34 +6,23 @@
 
 namespace {
 #define PUNCT "!\"#$%&'()*+,\\-./:;<=>?@[\\\\\\]^_`\\s{|}~"
-	re2::RE2 floatingPattern{"^(\\d[\\d']*\\.\\d+(e[\\-+]?\\d+))"};
-	re2::RE2 integerPattern{"^(([1-9][\\d']+)|(0x[\\da-f][\\d'a-f]*)|(0[0-7']*))"};
-	re2::RE2 stringPattern{"^(\"(\\\\[\\\\abenrt\"]|[^\\\\\"])*\")"};
+	re2::RE2 floatingLiteralPattern{"^(\\d[\\d']*\\.\\d+(e[\\-+]?\\d+))"};
+	re2::RE2 integerLiteralPattern{"^(([1-9][\\d']+)|(0x[\\da-f][\\d'a-f]*)|(0[0-7']*))"};
+	re2::RE2 stringLiteralPattern{"^(\"(\\\\[\\\\abenrt\"]|[^\\\\\"])*\")"};
 	re2::RE2 identifierPattern{"^([^0-9" PUNCT "][^" PUNCT "]*)"};
-
-	std::string_view trimLeft(std::string_view string) {
-		if (size_t pos = string.find_first_not_of(" \f\n\r\t\v"); pos != std::string_view::npos)
-			return string.substr(pos);
-
-		return {};
-	}
 }
 
 namespace mead {
-	const LexerRule Lexer::floatingRule{&floatingPattern, TokenType::Floating};
-	const LexerRule Lexer::integerRule{&integerPattern, TokenType::Integer};
-	const LexerRule Lexer::stringRule{&stringPattern, TokenType::String};
-	const LexerRule Lexer::identifierRule{&identifierPattern, TokenType::Identifier};
+	SourceLocation::SourceLocation(size_t line, size_t column):
+		line(line), column(column) {}
 
-	Token::Token(TokenType type, std::string value):
-		type(type), value(std::move(value)) {}
+	Token::Token(TokenType type, std::string value, SourceLocation location):
+		type(type), value(std::move(value)), location(location) {}
 
-	LexerRule::LexerRule(const re2::RE2 *regex, TokenType type):
-		type(type), regex(regex) {}
+	LexerRule::LexerRule(TokenType type):
+		type(type) {}
 
-	bool LexerRule::attempt(std::string_view input) {
-		return succeeded = re2::RE2::PartialMatch(input, *regex, &match);
-	}
+	LexerRule::~LexerRule() = default;
 
 	LexerRule::operator bool() const {
 		return succeeded;
@@ -46,14 +35,46 @@ namespace mead {
 		if (succeeded != other.succeeded)
 			return succeeded;
 
+		if (match.size() == other.match.size())
+			return type < other.type;
+
 		return match.size() > other.match.size();
 	}
 
-	Lexer::Lexer() = default;
+	void LexerRule::reset() {
+		succeeded = false;
+		match.clear();
+	}
+
+	RegexLexerRule::RegexLexerRule(TokenType type, const re2::RE2 *regex):
+		LexerRule(type), regex(regex) {}
+
+	bool RegexLexerRule::attempt(std::string_view input) {
+		return succeeded = re2::RE2::PartialMatch(input, *regex, &match);
+	}
+
+	LiteralLexerRule::LiteralLexerRule(TokenType type, std::string_view literal):
+		LexerRule(type), literal(literal) {}
+
+	bool LiteralLexerRule::attempt(std::string_view input) {
+		if (input.starts_with(literal)) {
+			match = literal;
+			return succeeded = true;
+		}
+
+		match.clear();
+		return succeeded = false;
+	}
+
+	Lexer::Lexer():
+		floatingRule(TokenType::FloatingLiteral, &floatingLiteralPattern),
+		integerRule(TokenType::IntegerLiteral, &integerLiteralPattern),
+		stringRule(TokenType::StringLiteral, &stringLiteralPattern),
+		identifierRule(TokenType::Identifier, &identifierPattern) {}
 
 	bool Lexer::lex(std::string_view input) {
-		for (input = trimLeft(input); !input.empty() && next(input); input = trimLeft(input));
-		return trimLeft(input).empty();
+		for (input = advanceWhitespace(input); !input.empty() && next(input); input = advanceWhitespace(input));
+		return advanceWhitespace(input).empty();
 	}
 
 	bool Lexer::next(std::string_view &input) {
@@ -61,27 +82,78 @@ namespace mead {
 		if (input.empty())
 			return false;
 
-		std::vector<LexerRule> rules = getRules();
+		std::vector<LexerRule *> rules = getRules();
 		assert(!rules.empty());
 
-		for (LexerRule &rule : rules) {
-			bool success = rule.attempt(input);
-			std::print("Rule type: {}, result: {}, match: \"{}\"\n", int(rule.type), success, rule.match);
+		for (LexerRule *rule : rules) {
+			bool success = rule->attempt(input);
+			std::print("Rule type: {}, result: {}, match: \"{}\"\n", int(rule->type), success, rule->match);
 		}
 
-		std::ranges::sort(rules, std::less<LexerRule>{});
+		std::ranges::sort(rules, [](const auto &left, const auto &right) {
+			return *left < *right;
+		});
 
-		if (LexerRule &best = rules.front()) {
-			assert(!best.match.empty());
-			input = input.substr(best.match.size());
-			tokens.emplace_back(best.type, std::move(best.match));
-			return true;
+		bool out = false;
+
+		if (LexerRule *best = rules.front()) {
+			assert(!best->match.empty());
+			input = input.substr(best->match.size());
+			SourceLocation location = currentLocation;
+			advance(best->match);
+			tokens.emplace_back(best->type, std::move(best->match), location);
+			out = true;
 		}
 
-		return false;
+		for (LexerRule *rule : rules)
+			rule->reset();
+
+		return out;
 	}
 
-	std::vector<LexerRule> Lexer::getRules() {
-		return {floatingRule, integerRule, stringRule, identifierRule};
+	std::vector<LexerRule *> Lexer::getRules() {
+		return {
+			&floatingRule,
+			&integerRule,
+			&stringRule,
+			&identifierRule,
+		};
+	}
+
+	void Lexer::advance(std::string_view text) {
+		for (const char ch : text) {
+			if (ch == '\n') {
+				advanceLine();
+			} else {
+				advanceColumn();
+			}
+		}
+	}
+
+	std::string_view Lexer::advanceWhitespace(std::string_view text) {
+		while (!text.empty()) {
+			char ch = text[0];
+
+			if (!std::isspace(ch))
+				return text;
+
+			if (ch == '\n')
+				advanceLine();
+			else
+				advanceColumn();
+
+			text.remove_prefix(1);
+		}
+
+		return text;
+	}
+
+	void Lexer::advanceLine() {
+		++currentLocation.line;
+		currentLocation.column = 1;
+	}
+
+	void Lexer::advanceColumn() {
+		++currentLocation.column;
 	}
 }
