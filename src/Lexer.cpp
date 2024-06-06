@@ -6,9 +6,11 @@
 
 namespace {
 #define PUNCT "!\"#$%&'()*+,\\-./:;<=>?@[\\\\\\]^_`\\s{|}~"
-	re2::RE2 floatingLiteralPattern{"^(\\d[\\d']*\\.\\d+(e[\\-+]?\\d+))"};
-	re2::RE2 integerLiteralPattern{"^(([1-9][\\d']+)|(0x[\\da-f][\\d'a-f]*)|(0[0-7']*))"};
-	re2::RE2 stringLiteralPattern{"^(\"(\\\\[\\\\abenrt\"]|[^\\\\\"])*\")"};
+	re2::RE2 floatingLiteralPattern{"^(\\d[\\d']*\\.\\d+([eE][\\-+]?\\d+))"};
+	re2::RE2 integerLiteralPattern{"^(([1-9][\\d']+)|(0x[\\da-fA-F][\\d'a-fA-F]*)|(0[0-7']*))"};
+	re2::RE2 stringLiteralPattern{"^(\"(\\\\[\\\\0abefnrt\"]|[^\\\\\"])*\")"};
+	re2::RE2 charLiteralPattern{"^('(\\\\\\\\|\\\\[0abefnrt']|[^\\\\']|\\\\x[0-9a-fA-F]+)')"};
+	re2::RE2 integerTypePattern{"^([iu](8|16|32|64))"};
 	re2::RE2 identifierPattern{"^([^0-9" PUNCT "][^" PUNCT "]*)"};
 }
 
@@ -67,9 +69,11 @@ namespace mead {
 	}
 
 	Lexer::Lexer():
-		floatingRule(TokenType::FloatingLiteral, &floatingLiteralPattern),
-		integerRule(TokenType::IntegerLiteral, &integerLiteralPattern),
-		stringRule(TokenType::StringLiteral, &stringLiteralPattern),
+		floatingLiteralRule(TokenType::FloatingLiteral, &floatingLiteralPattern),
+		integerLiteralRule(TokenType::IntegerLiteral, &integerLiteralPattern),
+		stringLiteralRule(TokenType::StringLiteral, &stringLiteralPattern),
+		charLiteralRule(TokenType::CharLiteral, &charLiteralPattern),
+		integerTypeRule(TokenType::IntegerType, &integerTypePattern),
 		identifierRule(TokenType::Identifier, &identifierPattern) {}
 
 	bool Lexer::lex(std::string_view input) {
@@ -113,9 +117,27 @@ namespace mead {
 
 	std::vector<LexerRule *> Lexer::getRules() {
 		return {
-			&floatingRule,
-			&integerRule,
-			&stringRule,
+			&floatingLiteralRule,
+			&integerLiteralRule,
+			&stringLiteralRule,
+			&charLiteralRule,
+			&integerTypeRule,
+			&voidRule,
+			&starRule,
+			&semicolonRule,
+			&equalsRule,
+			&doubleAmpersandRule,
+			&ampersandRule,
+			&doublePipeRule,
+			&pipeRule,
+			&openingSquareRule,
+			&closingSquareRule,
+			&openingParenRule,
+			&closingParenRule,
+			&openingBraceRule,
+			&closingBraceRule,
+			&openingAngleRule,
+			&closingAngleRule,
 			&identifierRule,
 		};
 	}
@@ -137,10 +159,11 @@ namespace mead {
 			if (!std::isspace(ch))
 				return text;
 
-			if (ch == '\n')
+			if (ch == '\n') {
 				advanceLine();
-			else
+			} else {
 				advanceColumn();
+			}
 
 			text.remove_prefix(1);
 		}

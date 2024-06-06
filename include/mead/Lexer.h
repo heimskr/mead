@@ -7,7 +7,9 @@
 
 namespace mead {
 	enum class TokenType {
-		FloatingLiteral, IntegerLiteral, StringLiteral,
+		FloatingLiteral, IntegerLiteral, StringLiteral, CharLiteral,
+		IntegerType, Void, Const, Star, Semicolon, Equals, DoubleAmpersand, Ampersand, DoublePipe, Pipe,
+		OpeningSquare, ClosingSquare, OpeningParen, ClosingParen, OpeningBrace, ClosingBrace, OpeningAngle, ClosingAngle,
 		Identifier,
 	};
 
@@ -75,10 +77,29 @@ namespace mead {
 			void advanceLine();
 			void advanceColumn();
 
-			RegexLexerRule floatingRule;
-			RegexLexerRule integerRule;
-			RegexLexerRule stringRule;
+			RegexLexerRule floatingLiteralRule;
+			RegexLexerRule integerLiteralRule;
+			RegexLexerRule stringLiteralRule;
+			RegexLexerRule charLiteralRule;
+			RegexLexerRule integerTypeRule;
 			RegexLexerRule identifierRule;
+			LiteralLexerRule voidRule{TokenType::Void, "void"};
+			LiteralLexerRule constRule{TokenType::Const, "const"};
+			LiteralLexerRule starRule{TokenType::Star, "*"};
+			LiteralLexerRule semicolonRule{TokenType::Semicolon, ";"};
+			LiteralLexerRule doubleAmpersandRule{TokenType::DoubleAmpersand, "&&"};
+			LiteralLexerRule ampersandRule{TokenType::Ampersand, "&"};
+			LiteralLexerRule doublePipeRule{TokenType::DoublePipe, "||"};
+			LiteralLexerRule pipeRule{TokenType::Pipe, "|"};
+			LiteralLexerRule openingSquareRule{TokenType::OpeningSquare, "["};
+			LiteralLexerRule closingSquareRule{TokenType::ClosingSquare, "]"};
+			LiteralLexerRule openingParenRule{TokenType::OpeningParen, "("};
+			LiteralLexerRule closingParenRule{TokenType::ClosingParen, ")"};
+			LiteralLexerRule openingBraceRule{TokenType::OpeningBrace, "{"};
+			LiteralLexerRule closingBraceRule{TokenType::ClosingBrace, "}"};
+			LiteralLexerRule openingAngleRule{TokenType::OpeningAngle, "<"};
+			LiteralLexerRule closingAngleRule{TokenType::ClosingAngle, ">"};
+			LiteralLexerRule equalsRule{TokenType::Equals, "="};
 	};
 }
 

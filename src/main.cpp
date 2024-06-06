@@ -8,7 +8,7 @@ int main(int, char **) {
 	using namespace mead;
 
 	Lexer lexer;
-	std::print("Success: {}\nTokens:\n", lexer.lex(" foobar 0'621.0e6 0x64'42'00 \"hello \\\"world\\\"\\n?\" \n\t 0"));
+	std::print("Success: {}\nTokens:\n", lexer.lex(" foobar 0'621.0e6 0x64'42'00 \"hello \\\"world\\\"\\n?\" \n\t 0\nu64 x = 42;"));
 	for (const Token &token : lexer.tokens) {
 		std::print("\t{}\n", token);
 	}
