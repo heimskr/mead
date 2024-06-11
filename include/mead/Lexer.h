@@ -1,33 +1,15 @@
 #pragma once
 
+#include "mead/Token.h"
+
 #include <re2/re2.h>
 
+#include <format>
+#include <memory>
 #include <string>
 #include <vector>
 
 namespace mead {
-	enum class TokenType {
-		FloatingLiteral, IntegerLiteral, StringLiteral, CharLiteral,
-		IntegerType, Void, Const, Star, Semicolon, Equals, DoubleAmpersand, Ampersand, DoublePipe, Pipe,
-		OpeningSquare, ClosingSquare, OpeningParen, ClosingParen, OpeningBrace, ClosingBrace, OpeningAngle, ClosingAngle,
-		Identifier,
-	};
-
-	struct SourceLocation {
-		size_t line{};
-		size_t column{};
-
-		SourceLocation(size_t line, size_t column);
-	};
-
-	struct Token {
-		TokenType type;
-		std::string value;
-		SourceLocation location;
-
-		Token(TokenType type, std::string value, SourceLocation location);
-	};
-
 	struct LexerRule {
 		TokenType type;
 		bool succeeded = false;
@@ -101,6 +83,8 @@ namespace mead {
 			LiteralLexerRule closingAngleRule{TokenType::ClosingAngle, ">"};
 			LiteralLexerRule equalsRule{TokenType::Equals, "="};
 	};
+
+	using LexerPtr = std::shared_ptr<Lexer>;
 }
 
 template <>

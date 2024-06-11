@@ -5,22 +5,16 @@
 #include <print>
 
 namespace {
-#define PUNCT "!\"#$%&'()*+,\\-./:;<=>?@[\\\\\\]^_`\\s{|}~"
 	re2::RE2 floatingLiteralPattern{"^(\\d[\\d']*\\.\\d+([eE][\\-+]?\\d+))"};
 	re2::RE2 integerLiteralPattern{"^(([1-9][\\d']+)|(0x[\\da-fA-F][\\d'a-fA-F]*)|(0[0-7']*))"};
 	re2::RE2 stringLiteralPattern{"^(\"(\\\\[\\\\0abefnrt\"]|[^\\\\\"])*\")"};
 	re2::RE2 charLiteralPattern{"^('(\\\\\\\\|\\\\[0abefnrt']|[^\\\\']|\\\\x[0-9a-fA-F]+)')"};
 	re2::RE2 integerTypePattern{"^([iu](8|16|32|64))"};
+#define PUNCT "!\"#%&'()*+,\\-./:;<=>?@[\\\\\\]\\^_`\\s{|}~" // Intentionally excludes $
 	re2::RE2 identifierPattern{"^([^0-9" PUNCT "][^" PUNCT "]*)"};
 }
 
 namespace mead {
-	SourceLocation::SourceLocation(size_t line, size_t column):
-		line(line), column(column) {}
-
-	Token::Token(TokenType type, std::string value, SourceLocation location):
-		type(type), value(std::move(value)), location(location) {}
-
 	LexerRule::LexerRule(TokenType type):
 		type(type) {}
 
