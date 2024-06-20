@@ -82,6 +82,10 @@ namespace mead {
 			LiteralLexerRule openingAngleRule{TokenType::OpeningAngle, "<"};
 			LiteralLexerRule closingAngleRule{TokenType::ClosingAngle, ">"};
 			LiteralLexerRule equalsRule{TokenType::Equals, "="};
+			LiteralLexerRule fnKeywordRule{TokenType::FnKeyword, "fn"};
+			LiteralLexerRule arrowRule{TokenType::Arrow, "->"};
+			LiteralLexerRule colonRule{TokenType::Colon, ":"};
+			LiteralLexerRule commaRule{TokenType::Comma, ","};
 	};
 
 	using LexerPtr = std::shared_ptr<Lexer>;
