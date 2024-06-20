@@ -1,12 +1,15 @@
-#include "mead/QualifiedName.h"
+#include "mead/NamespacedName.h"
 
 namespace mead {
-	QualifiedName::QualifiedName() = default;
+	NamespacedName::NamespacedName() = default;
 
-	QualifiedName::QualifiedName(std::span<const std::string> namespaces, std::string name):
-		namespaces(namespaces.begin(), namespaces.end()), name(std::move(name)) {}
+	NamespacedName::NamespacedName(std::vector<std::string> namespaces, std::string name):
+		namespaces(std::move(namespaces)), name(std::move(name)) {}
 
-	QualifiedName::operator std::string() const {
+	NamespacedName::NamespacedName(std::span<const std::string> namespaces, std::string name):
+		NamespacedName(std::vector(namespaces.begin(), namespaces.end()), std::move(name)) {}
+
+	NamespacedName::operator std::string() const {
 		std::string out;
 		for (const std::string &namespace_ : namespaces) {
 			out += namespace_;
@@ -16,7 +19,7 @@ namespace mead {
 		return out;
 	}
 
-	bool QualifiedName::operator<(const QualifiedName &other) const {
+	bool NamespacedName::operator<(const NamespacedName &other) const {
 		if (this == &other || other.namespaces.size() > namespaces.size()) {
 			return false;
 		}

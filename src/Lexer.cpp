@@ -134,8 +134,10 @@ namespace mead {
 			&closingAngleRule,
 			&fnKeywordRule,
 			&arrowRule,
+			&doubleColonRule,
 			&colonRule,
 			&commaRule,
+			&constRule,
 			&identifierRule,
 		};
 	}

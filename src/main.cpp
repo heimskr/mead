@@ -1,4 +1,5 @@
 #include "mead/Lexer.h"
+#include "mead/Parser.h"
 
 #include <format>
 #include <iostream>
@@ -20,9 +21,26 @@ int main(int, char **) {
 		}
 	)";
 
+	example = R"(
+		fn main(argc: i32, argv: u8 const * const * const) -> i32 {
+			foo: u8;
+			{
+				foo: u16;
+				{
+					foo: u32;
+				}
+			}
+			bar: i64;
+		}
+	)";
+
 	Lexer lexer;
 	std::print("Success: {}\nTokens:\n", lexer.lex(example));
 	for (const Token &token : lexer.tokens) {
 		std::print("\t{}\n", token);
 	}
+
+	Parser parser;
+	parser.parse(lexer.tokens);
+
 }

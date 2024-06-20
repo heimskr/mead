@@ -1,7 +1,16 @@
 #include "mead/TypeDB.h"
 
 namespace mead {
-	TypePtr TypeDB::operator[](const QualifiedName &name) {
+	bool TypeDB::insert(TypePtr type) {
+		if (auto iter = types.find(type->name); iter != types.end()) {
+			return false;
+		}
+
+		types[type->name] = type;
+		return true;
+	}
+
+	TypePtr TypeDB::operator[](const NamespacedName &name) {
 		if (auto iter = types.find(name); iter != types.end()) {
 			return iter->second;
 		}
@@ -9,7 +18,7 @@ namespace mead {
 		return types[name] = Type::make(name);
 	}
 
-	TypePtr TypeDB::at(const QualifiedName &name) const {
+	TypePtr TypeDB::at(const NamespacedName &name) const {
 		if (auto iter = types.find(name); iter != types.end()) {
 			return iter->second;
 		}
@@ -17,7 +26,7 @@ namespace mead {
 		throw std::out_of_range("Type not found");
 	}
 
-	TypePtr TypeDB::maybe(const QualifiedName &name) const {
+	TypePtr TypeDB::maybe(const NamespacedName &name) const {
 		if (auto iter = types.find(name); iter != types.end()) {
 			return iter->second;
 		}

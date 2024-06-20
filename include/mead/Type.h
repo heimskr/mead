@@ -1,15 +1,15 @@
 #pragma once
 
-#include "mead/QualifiedName.h"
+#include "mead/NamespacedName.h"
 
 #include <memory>
 
 namespace mead {
 	class Type {
 		public:
-			QualifiedName name;
+			NamespacedName name;
 
-			Type(QualifiedName name);
+			Type(NamespacedName name);
 
 			template <typename... Args>
 			static std::shared_ptr<Type> make(Args &&...args) {

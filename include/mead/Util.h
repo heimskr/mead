@@ -31,5 +31,21 @@ namespace mead {
 			void cancel() {
 				automatic = false;
 			}
+
+			T & get() {
+				return saved;
+			}
+
+			const T & get() const {
+				return saved;
+			}
+
+			T * operator->() {
+				return &saved;
+			}
+
+			const T * operator->() const {
+				return &saved;
+			}
 	};
 }

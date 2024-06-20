@@ -4,7 +4,6 @@
 
 #include <re2/re2.h>
 
-#include <format>
 #include <memory>
 #include <string>
 #include <vector>
@@ -84,35 +83,10 @@ namespace mead {
 			LiteralLexerRule equalsRule{TokenType::Equals, "="};
 			LiteralLexerRule fnKeywordRule{TokenType::FnKeyword, "fn"};
 			LiteralLexerRule arrowRule{TokenType::Arrow, "->"};
+			LiteralLexerRule doubleColonRule{TokenType::DoubleColon, "::"};
 			LiteralLexerRule colonRule{TokenType::Colon, ":"};
 			LiteralLexerRule commaRule{TokenType::Comma, ","};
 	};
 
 	using LexerPtr = std::shared_ptr<Lexer>;
 }
-
-template <>
-struct std::formatter<mead::SourceLocation> {
-	formatter() = default;
-
-	constexpr auto parse(std::format_parse_context &ctx) {
-		return ctx.begin();
-	}
-
-	auto format(const auto &location, std::format_context &ctx) const {
-		return std::format_to(ctx.out(), "[{}:{}]", location.line, location.column);
-	}
-};
-
-template <>
-struct std::formatter<mead::Token> {
-	formatter() = default;
-
-	constexpr auto parse(std::format_parse_context &ctx) {
-		return ctx.begin();
-	}
-
-	auto format(const auto &token, std::format_context &ctx) const {
-		return std::format_to(ctx.out(), "({}: \"{}\" @ {})", int(token.type), token.value, token.location);
-	}
-};
