@@ -82,22 +82,39 @@ namespace mead {
 
 		name->reparent(node);
 
-		if (peek(tokens, TokenType::ClosingParen)) {
-			saver.cancel();
-			return node;
-		}
+		std::vector<ASTNodePtr> variables;
 
-		do {
-			ASTNodePtr variable = takeTypedVariable(tokens);
+		if (!take(tokens, TokenType::ClosingParen)) {
+			do {
+				ASTNodePtr variable = takeTypedVariable(tokens);
 
-			if (!variable) {
-				std::println("FunctionPrototype: \e[31mbad variable\e[39m @ {}", tokens.front());
+				if (!variable) {
+					std::println("FunctionPrototype: \e[31mbad variable\e[39m @ {}", tokens.front());
+					return nullptr;
+				}
+
+
+				variables.push_back(std::move(variable));
+			} while (take(tokens, TokenType::Comma));
+
+			if (!take(tokens, TokenType::ClosingParen)) {
 				return nullptr;
 			}
+		}
 
+		if (take(tokens, TokenType::Arrow)) {
+			if (ASTNodePtr return_type = takeType(tokens, nullptr)) {
+				return_type->reparent(node);
+			} else {
+				return nullptr;
+			}
+		} else {
+			node->add(NodeType::Type, Token(TokenType::Void, "void", {}));
+		}
 
+		for (const ASTNodePtr &variable : variables) {
 			variable->reparent(node);
-		} while (take(tokens, TokenType::Comma));
+		}
 
 		saver.cancel();
 		return node;
