@@ -22,7 +22,8 @@ namespace mead {
 		public:
 			Parser();
 
-			void parse(std::span<const Token> tokens);
+			/** Returns the token where parsing failed if applicable, or nothing otherwise. */
+			std::optional<Token> parse(std::span<const Token> tokens);
 
 		private:
 			ASTNodePtr add(ASTNodePtr);
@@ -40,5 +41,20 @@ namespace mead {
 			ASTNodePtr takeAmpersand(std::span<const Token> &tokens);
 			std::optional<std::string> takeIdentifierPure(std::span<const Token> &tokens);
 			ASTNodePtr takeVariableDeclaration(std::span<const Token> &tokens);
+			ASTNodePtr takeExpression(std::span<const Token> &tokens);
+			ASTNodePtr takePrime(std::span<const Token> &tokens);
+			ASTNodePtr takeExpressionList(std::span<const Token> &tokens);
+			ASTNodePtr takeConstructorExpression(std::span<const Token> &tokens);
+			ASTNodePtr takePrefixExpression(std::span<const Token> &tokens);
+			ASTNodePtr takeUnaryPrefixExpression(std::span<const Token> &tokens);
+			ASTNodePtr takeCastExpression(std::span<const Token> &tokens);
+			ASTNodePtr takePostfixPrime(std::span<const Token> &tokens);
+			ASTNodePtr takeSizeExpression(std::span<const Token> &tokens);
+			ASTNodePtr takeExpression1(std::span<const Token> &tokens);
+			ASTNodePtr takeExpression2(std::span<const Token> &tokens);
+			ASTNodePtr takeExpression3(std::span<const Token> &tokens);
+			ASTNodePtr takeExpression4(std::span<const Token> &tokens);
+			ASTNodePtr takeExpression5(std::span<const Token> &tokens);
+			ASTNodePtr takeExpression6(std::span<const Token> &tokens);
 	};
 }

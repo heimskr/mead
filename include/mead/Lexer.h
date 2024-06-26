@@ -64,6 +64,7 @@ namespace mead {
 			RegexLexerRule charLiteralRule;
 			RegexLexerRule integerTypeRule;
 			RegexLexerRule identifierRule;
+			RegexLexerRule castRule;
 			LiteralLexerRule voidRule{TokenType::Void, "void"};
 			LiteralLexerRule constRule{TokenType::Const, "const"};
 			LiteralLexerRule starRule{TokenType::Star, "*"};
@@ -81,11 +82,18 @@ namespace mead {
 			LiteralLexerRule openingAngleRule{TokenType::OpeningAngle, "<"};
 			LiteralLexerRule closingAngleRule{TokenType::ClosingAngle, ">"};
 			LiteralLexerRule equalsRule{TokenType::Equals, "="};
-			LiteralLexerRule fnKeywordRule{TokenType::FnKeyword, "fn"};
+			LiteralLexerRule fnRule{TokenType::Fn, "fn"};
 			LiteralLexerRule arrowRule{TokenType::Arrow, "->"};
 			LiteralLexerRule doubleColonRule{TokenType::DoubleColon, "::"};
 			LiteralLexerRule colonRule{TokenType::Colon, ":"};
 			LiteralLexerRule commaRule{TokenType::Comma, ","};
+			LiteralLexerRule doublePlusRule{TokenType::DoublePlus, "++"};
+			LiteralLexerRule doubleMinusRule{TokenType::DoubleMinus, "--"};
+			LiteralLexerRule plusRule{TokenType::Plus, "+"};
+			LiteralLexerRule minusRule{TokenType::Minus, "-"};
+			LiteralLexerRule bangRule{TokenType::Minus, "!"};
+			LiteralLexerRule tildeRule{TokenType::Minus, "~"};
+			LiteralLexerRule sizeRule{TokenType::Size, "#size"};
 	};
 
 	using LexerPtr = std::shared_ptr<Lexer>;

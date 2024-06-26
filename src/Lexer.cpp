@@ -10,6 +10,7 @@ namespace {
 	re2::RE2 stringLiteralPattern{"^(\"(\\\\[\\\\0abefnrt\"]|[^\\\\\"])*\")"};
 	re2::RE2 charLiteralPattern{"^('(\\\\\\\\|\\\\[0abefnrt']|[^\\\\']|\\\\x[0-9a-fA-F]+)')"};
 	re2::RE2 integerTypePattern{"^([iu](8|16|32|64))"};
+	re2::RE2 castPattern{"^((static|dynamic|reinterpret|const)_cast)"};
 #define PUNCT "!\"#%&'()*+,\\-./:;<=>?@[\\\\\\]\\^_`\\s{|}~" // Intentionally excludes $
 	re2::RE2 identifierPattern{"^([^0-9" PUNCT "][^" PUNCT "]*)"};
 }
@@ -68,7 +69,8 @@ namespace mead {
 		stringLiteralRule(TokenType::StringLiteral, &stringLiteralPattern),
 		charLiteralRule(TokenType::CharLiteral, &charLiteralPattern),
 		integerTypeRule(TokenType::IntegerType, &integerTypePattern),
-		identifierRule(TokenType::Identifier, &identifierPattern) {}
+		identifierRule(TokenType::Identifier, &identifierPattern),
+		castRule(TokenType::Cast, &castPattern) {}
 
 	bool Lexer::lex(std::string_view input) {
 		for (input = advanceWhitespace(input); !input.empty() && next(input); input = advanceWhitespace(input));
@@ -76,7 +78,7 @@ namespace mead {
 	}
 
 	bool Lexer::next(std::string_view &input) {
-		std::print("input: \"{}\"\n", input);
+		// std::println("input: \"{}\"", input);
 		if (input.empty())
 			return false;
 
@@ -84,8 +86,9 @@ namespace mead {
 		assert(!rules.empty());
 
 		for (LexerRule *rule : rules) {
-			bool success = rule->attempt(input);
-			std::print("Rule type: {}, result: {}, match: \"{}\"\n", int(rule->type), success, rule->match);
+			rule->attempt(input);
+			// bool success = rule->attempt(input);
+			// std::println("Rule type: {}, result: {}, match: \"{}\"", int(rule->type), success, rule->match);
 		}
 
 		std::ranges::sort(rules, [](const auto &left, const auto &right) {
@@ -103,8 +106,9 @@ namespace mead {
 			out = true;
 		}
 
-		for (LexerRule *rule : rules)
+		for (LexerRule *rule : rules) {
 			rule->reset();
+		}
 
 		return out;
 	}
@@ -132,12 +136,20 @@ namespace mead {
 			&closingBraceRule,
 			&openingAngleRule,
 			&closingAngleRule,
-			&fnKeywordRule,
+			&fnRule,
 			&arrowRule,
 			&doubleColonRule,
 			&colonRule,
 			&commaRule,
 			&constRule,
+			&doublePlusRule,
+			&doubleMinusRule,
+			&plusRule,
+			&minusRule,
+			&bangRule,
+			&tildeRule,
+			&castRule,
+			&sizeRule,
 			&identifierRule,
 		};
 	}

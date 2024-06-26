@@ -22,6 +22,8 @@ int main(int, char **) {
 	)";
 
 	example = R"(
+		baz: i8;
+
 		fn main(argc: i32, argv: u8 const * const * const) -> i32 {
 			foo: u8;
 			{
@@ -31,16 +33,25 @@ int main(int, char **) {
 				}
 			}
 			bar: i64;
-		}
+		};
 	)";
 
 	Lexer lexer;
-	std::print("Success: {}\nTokens:\n", lexer.lex(example));
-	for (const Token &token : lexer.tokens) {
-		std::print("\t{}\n", token);
+
+	if (!lexer.lex(example)) {
+		std::println("Lexing failed.");
+		return 1;
 	}
 
-	Parser parser;
-	parser.parse(lexer.tokens);
+	// std::print("Success: {}\nTokens:\n", lexer.lex(example));
+	// for (const Token &token : lexer.tokens) {
+	// 	std::print("\t{}\n", token);
+	// }
 
+	Parser parser;
+	if (std::optional<Token> failure = parser.parse(lexer.tokens)) {
+		std::println("Parsing failed at {}", *failure);
+	} else {
+		std::println("Parsed successfully.");
+	}
 }

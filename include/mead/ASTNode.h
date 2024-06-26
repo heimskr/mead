@@ -10,6 +10,7 @@ namespace mead {
 		Invalid,
 		FunctionPrototype, FunctionDeclaration, FunctionDefinition, VariableDeclaration, VariableDefinition, Identifier, Type, Block,
 		Const, Pointer, Reference,
+		PrefixExpression, PostfixPrime, ConstructorExpression, UnaryExpression, CastExpression, SizeExpression,
 	};
 
 	class ASTNode: public std::enable_shared_from_this<ASTNode> {

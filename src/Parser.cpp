@@ -8,10 +8,10 @@
 namespace mead {
 	Parser::Parser() = default;
 
-	void Parser::parse(std::span<const Token> tokens) {
+	std::optional<Token> Parser::parse(std::span<const Token> tokens) {
 		for (;;) {
 			if (tokens.empty()) {
-				return;
+				return std::nullopt;
 			}
 
 			if (ASTNodePtr node = takeVariableDeclaration(tokens)) {
@@ -22,12 +22,11 @@ namespace mead {
 				add(node);
 			} else if (ASTNodePtr node = takeFunctionDefinition(tokens)) {
 				add(node);
+			} else if (take(tokens, TokenType::Semicolon)) {
+				;
 			} else {
-				std::println("Failed token: {}", tokens.front());
-				throw std::runtime_error("Parsing failed");
+				return tokens.front();
 			}
-
-			std::println("Added token.");
 		}
 	}
 
@@ -63,20 +62,17 @@ namespace mead {
 
 		ASTNodePtr node = ASTNode::make(NodeType::FunctionPrototype, tokens.front());
 
-		if (!take(tokens, TokenType::FnKeyword)) {
-			std::println("FunctionPrototype: \e[31mno FnKeyword\e[39m");
+		if (!take(tokens, TokenType::Fn)) {
 			return nullptr;
 		}
 
 		ASTNodePtr name = takeIdentifier(tokens);
 
 		if (!name) {
-			std::println("FunctionPrototype: \e[31mno Identifier\e[39m");
 			return nullptr;
 		}
 
 		if (!take(tokens, TokenType::OpeningParen)) {
-			std::println("FunctionPrototype: \e[31mno OpeningParen\e[39m");
 			return nullptr;
 		}
 
@@ -89,7 +85,6 @@ namespace mead {
 				ASTNodePtr variable = takeTypedVariable(tokens);
 
 				if (!variable) {
-					std::println("FunctionPrototype: \e[31mbad variable\e[39m @ {}", tokens.front());
 					return nullptr;
 				}
 
@@ -142,20 +137,16 @@ namespace mead {
 		ASTNodePtr prototype = takeFunctionPrototype(tokens);
 
 		if (!prototype) {
-			std::println("FunctionDefinition: \e[31mno FunctionPrototype\e[39m");
 			return nullptr;
 		}
 
-		std::println("\e[32mGot prototype\e[39m. Front token: {}", tokens.front());
 
 		ASTNodePtr block = takeBlock(tokens);
 
 		if (!block) {
-			std::println("FunctionDefinition: \e[31mno Block\e[39m");
 			return nullptr;
 		}
 
-		std::println("\e[32mGot block\e[39m");
 
 		ASTNodePtr node = ASTNode::make(NodeType::FunctionDefinition, prototype->token);
 		prototype->reparent(node);
@@ -185,19 +176,16 @@ namespace mead {
 		ASTNodePtr name = takeIdentifier(tokens);
 
 		if (!name) {
-			std::println("TypedVariable: \e[31mno Identifier\e[39m @ {}", tokens.front());
 			return nullptr;
 		}
 
 		if (!take(tokens, TokenType::Colon)) {
-			std::println("TypedVariable: \e[31mno Colon\e[39m @ {}", tokens.front());
 			return nullptr;
 		}
 
 		ASTNodePtr type = takeType(tokens, nullptr);
 
 		if (!type) {
-			std::println("TypedVariable: \e[31mno Type\e[39m @ {}", tokens.front());
 			return nullptr;
 		}
 
@@ -213,7 +201,6 @@ namespace mead {
 		Saver saver{tokens};
 
 		if (!take(tokens, TokenType::OpeningBrace)) {
-			std::println("Block: \e[31mno OpeningBrace\e[39m @ {}", tokens.front());
 			return nullptr;
 		}
 
@@ -223,7 +210,6 @@ namespace mead {
 			ASTNodePtr statement = takeStatement(tokens);
 
 			if (!statement) {
-				std::println("Block: \e[31mno Statement\e[39m @ {}", tokens.front());
 				return nullptr;
 			}
 
@@ -288,9 +274,7 @@ namespace mead {
 		bool ref_found = false;
 
 		for (;;) {
-			std::println("Front: {}", tokens.front());
 			if (const Token *token = take(tokens, TokenType::Const)) {
-				std::println("Found const");
 				node->add(NodeType::Const, *token);
 				if (const Token *star = take(tokens, TokenType::Star)) {
 					node->add(NodeType::Pointer, *star);
@@ -302,11 +286,9 @@ namespace mead {
 					ref_found = true;
 				}
 			} else if (const Token *star = take(tokens, TokenType::Star)) {
-				std::println("Found star");
 				node->add(NodeType::Pointer, *star);
 				pointer_consts.push_back(false);
 			} else if (const Token *ampersand = take(tokens, TokenType::Ampersand)) {
-				std::println("Found ampersand");
 				if (ref_found) {
 					return nullptr;
 				}
@@ -316,7 +298,6 @@ namespace mead {
 				is_reference = true;
 				ref_found = true;
 			} else {
-				std::println("Breaking @ {}", tokens.front());
 				break;
 			}
 		}
@@ -362,4 +343,238 @@ namespace mead {
 		return node;
 	}
 
+	ASTNodePtr Parser::takeExpression(std::span<const Token> &tokens) {
+		Saver saver{tokens};
+
+		if (ASTNodePtr expr = takeConstructorExpression(tokens)) {
+			return expr;
+		}
+
+		if (ASTNodePtr expr = takePrefixExpression(tokens)) {
+			return expr;
+		}
+
+		if (ASTNodePtr expr = takeUnaryPrefixExpression(tokens)) {
+			return expr;
+		}
+
+		if (ASTNodePtr expr = takeCastExpression(tokens)) {
+			return expr;
+		}
+
+		if (ASTNodePtr expr = takeSizeExpression(tokens)) {
+			return expr;
+		}
+
+		return nullptr;
+	}
+
+	ASTNodePtr Parser::takeConstructorExpression(std::span<const Token> &tokens) {
+		if (tokens.empty()) {
+			return nullptr;
+		}
+
+		const Token &anchor = tokens.front();
+		Saver saver{tokens};
+
+		ASTNodePtr type = takeType(tokens, nullptr);
+
+		if (!type) {
+			return nullptr;
+		}
+
+		if (!take(tokens, TokenType::OpeningParen)) {
+			return nullptr;
+		}
+
+		ASTNodePtr list = takeExpressionList(tokens);
+
+		if (!list) {
+			return nullptr;
+		}
+
+		if (!take(tokens, TokenType::ClosingParen)) {
+			return nullptr;
+		}
+
+		ASTNodePtr out = ASTNode::make(NodeType::ConstructorExpression, anchor);
+		type->reparent(out);
+		list->reparent(out);
+		saver.cancel();
+		return out;
+	}
+
+	ASTNodePtr Parser::takePrefixExpression(std::span<const Token> &tokens) {
+		Saver saver{tokens};
+
+		const Token *oper = take(tokens, TokenType::DoublePlus);
+
+		if (!oper) {
+			oper = take(tokens, TokenType::DoubleMinus);
+			if (!oper) {
+				return nullptr;
+			}
+		}
+
+		ASTNodePtr subexpr = takeExpression(tokens);
+
+		if (!subexpr) {
+			return nullptr;
+		}
+
+		ASTNodePtr prime = takePrime(tokens);
+
+		if (!prime) {
+			return nullptr;
+		}
+
+		ASTNodePtr out = ASTNode::make(NodeType::PrefixExpression, *oper);
+		subexpr->reparent(out);
+		prime->reparent(out);
+		saver.cancel();
+		return out;
+	}
+
+	ASTNodePtr Parser::takeUnaryPrefixExpression(std::span<const Token> &tokens) {
+		Saver saver{tokens};
+
+		const Token *oper = nullptr;
+
+		if (const Token *plus = take(tokens, TokenType::Plus)) {
+			oper = plus;
+		} else if (const Token *minus = take(tokens, TokenType::Minus)) {
+			oper = minus;
+		} else if (const Token *bang = take(tokens, TokenType::Bang)) {
+			oper = bang;
+		} else if (const Token *tilde = take(tokens, TokenType::Tilde)) {
+			oper = tilde;
+		} else {
+			return nullptr;
+		}
+
+		ASTNodePtr expr = takeExpression(tokens);
+
+		if (!expr) {
+			return nullptr;
+		}
+
+		ASTNodePtr prime = takePrime(tokens);
+
+		if (!prime) {
+			return nullptr;
+		}
+
+		ASTNodePtr out = ASTNode::make(NodeType::UnaryExpression, *oper);
+		expr->reparent(out);
+		prime->reparent(out);
+		saver.cancel();
+		return out;
+	}
+
+	ASTNodePtr Parser::takeCastExpression(std::span<const Token> &tokens) {
+		Saver saver{tokens};
+
+		const Token *cast = take(tokens, TokenType::Cast);
+
+		if (!cast) {
+			return nullptr;
+		}
+
+		if (!take(tokens, TokenType::OpeningAngle)) {
+			return nullptr;
+		}
+
+		ASTNodePtr type = takeType(tokens, nullptr);
+
+		if (!take(tokens, TokenType::ClosingAngle)) {
+			return nullptr;
+		}
+
+		if (!take(tokens, TokenType::OpeningParen)) {
+			return nullptr;
+		}
+
+		ASTNodePtr expr = takeExpression(tokens);
+
+		if (!expr) {
+			return nullptr;
+		}
+
+		if (!take(tokens, TokenType::ClosingParen)) {
+			return nullptr;
+		}
+
+		ASTNodePtr prime = takePrime(tokens);
+
+		if (!prime) {
+			return nullptr;
+		}
+
+		ASTNodePtr out = ASTNode::make(NodeType::CastExpression, *cast);
+		type->reparent(out);
+		expr->reparent(out);
+		prime->reparent(out);
+		saver.cancel();
+		return out;
+	}
+
+	ASTNodePtr Parser::takePostfixPrime(std::span<const Token> &tokens) {
+		Saver saver{tokens};
+
+		const Token *oper = take(tokens, TokenType::DoublePlus);
+
+		if (!oper) {
+			oper = take(tokens, TokenType::DoubleMinus);
+			if (!oper) {
+				return nullptr;
+			}
+		}
+
+		ASTNodePtr prime = takePrime(tokens);
+
+		if (!prime) {
+			return nullptr;
+		}
+
+		ASTNodePtr out = ASTNode::make(NodeType::PostfixPrime, *oper);
+		prime->reparent(out);
+		saver.cancel();
+		return out;
+	}
+
+	ASTNodePtr Parser::takeSizeExpression(std::span<const Token> &tokens) {
+		Saver saver{tokens};
+
+		const Token *token = take(tokens, TokenType::Size);
+
+		if (!token) {
+			return nullptr;
+		}
+
+		if (!take(tokens, TokenType::OpeningParen)) {
+			return nullptr;
+		}
+
+		ASTNodePtr expr = takeExpression(tokens);
+
+		if (!expr) {
+			return nullptr;
+		}
+
+		if (!take(tokens, TokenType::ClosingParen)) {
+			return nullptr;
+		}
+
+		ASTNodePtr prime = takePrime(tokens);
+
+		if (!prime) {
+			return nullptr;
+		}
+
+		ASTNodePtr out = ASTNode::make(NodeType::SizeExpression, *token);
+		expr->reparent(out);
+		prime->reparent(out);
+		saver.cancel();
+		return out;
+	}
 }
