@@ -9,22 +9,32 @@ namespace mead {
 	Parser::Parser() = default;
 
 	std::optional<Token> Parser::parse(std::span<const Token> tokens) {
+		auto log = logger("parse");
+
+		int item = 0;
+
 		for (;;) {
+			log("Item {}", ++item);
 			if (tokens.empty()) {
 				return std::nullopt;
 			}
 
 			if (ASTNodePtr node = takeVariableDeclaration(tokens)) {
+				log("Adding variable declaration @ {}", node->location());
 				add(node);
 			// } else if (ASTNodePtr node = takeVariableDefinition(tokens)) {
 			// 	add(node);
 			} else if (ASTNodePtr node = takeFunctionDeclaration(tokens)) {
+				log("Adding function declaration @ {}", node->location());
 				add(node);
 			} else if (ASTNodePtr node = takeFunctionDefinition(tokens)) {
+				log("Adding function definition @ {}", node->location());
 				add(node);
-			} else if (take(tokens, TokenType::Semicolon)) {
+			} else if (const Token *semicolon = take(tokens, TokenType::Semicolon)) {
+				log("Skipping semicolon @ {}", semicolon->location);
 				;
 			} else {
+				log("Giving up at {}", tokens.front().location);
 				return tokens.front();
 			}
 		}
@@ -36,7 +46,11 @@ namespace mead {
 	}
 
 	const Token * Parser::peek(std::span<const Token> tokens, TokenType token_type) {
-		if (tokens.empty() || tokens.front().type != token_type) {
+		if (tokens.empty()) {
+			return nullptr;
+		}
+
+		if (tokens.front().type != token_type) {
 			return nullptr;
 		}
 
@@ -54,7 +68,10 @@ namespace mead {
 	}
 
 	ASTNodePtr Parser::takeFunctionPrototype(std::span<const Token> &tokens) {
+		auto log = logger("takeFunctionPrototype");
+
 		if (tokens.empty()) {
+			log("No tokens");
 			return nullptr;
 		}
 
@@ -63,16 +80,19 @@ namespace mead {
 		ASTNodePtr node = ASTNode::make(NodeType::FunctionPrototype, tokens.front());
 
 		if (!take(tokens, TokenType::Fn)) {
+			log("No 'fn' @ {}", tokens.front());
 			return nullptr;
 		}
 
 		ASTNodePtr name = takeIdentifier(tokens);
 
 		if (!name) {
+			log("No name @ {}", tokens.front());
 			return nullptr;
 		}
 
 		if (!take(tokens, TokenType::OpeningParen)) {
+			log("No '(' @ {}", tokens.front());
 			return nullptr;
 		}
 
@@ -85,14 +105,15 @@ namespace mead {
 				ASTNodePtr variable = takeTypedVariable(tokens);
 
 				if (!variable) {
+					log("No variable @ {}", tokens.front());
 					return nullptr;
 				}
-
 
 				variables.push_back(std::move(variable));
 			} while (take(tokens, TokenType::Comma));
 
 			if (!take(tokens, TokenType::ClosingParen)) {
+				log("No ')' @ {}", tokens.front());
 				return nullptr;
 			}
 		}
@@ -101,6 +122,7 @@ namespace mead {
 			if (ASTNodePtr return_type = takeType(tokens, nullptr)) {
 				return_type->reparent(node);
 			} else {
+				log("No return type @ {}", tokens.front());
 				return nullptr;
 			}
 		} else {
@@ -116,11 +138,18 @@ namespace mead {
 	}
 
 	ASTNodePtr Parser::takeFunctionDeclaration(std::span<const Token> &tokens) {
+		auto log = logger("takeFunctionDeclaration");
 		Saver saver{tokens};
 
 		ASTNodePtr prototype = takeFunctionPrototype(tokens);
 
-		if (!prototype || !take(tokens, TokenType::Semicolon)) {
+		if (!prototype) {
+			log("No prototype @ {}", tokens.front());
+			return nullptr;
+		}
+
+		if (!take(tokens, TokenType::Semicolon)) {
+			log("No ';' @ {}", tokens.front());
 			return nullptr;
 		}
 
@@ -132,21 +161,22 @@ namespace mead {
 	}
 
 	ASTNodePtr Parser::takeFunctionDefinition(std::span<const Token> &tokens) {
+		auto log = logger("takeFunctionDefinition");
 		Saver saver{tokens};
 
 		ASTNodePtr prototype = takeFunctionPrototype(tokens);
 
 		if (!prototype) {
+			log("No prototype @ {}", tokens.front());
 			return nullptr;
 		}
-
 
 		ASTNodePtr block = takeBlock(tokens);
 
 		if (!block) {
+			log("No block @ {}", tokens.front());
 			return nullptr;
 		}
-
 
 		ASTNodePtr node = ASTNode::make(NodeType::FunctionDefinition, prototype->token);
 		prototype->reparent(node);
@@ -157,7 +187,10 @@ namespace mead {
 	}
 
 	ASTNodePtr Parser::takeIdentifier(std::span<const Token> &tokens) {
+		auto log = logger("takeIdentifier");
+
 		if (!peek(tokens, TokenType::Identifier)) {
+			log("No identifier @ {}", tokens.front());
 			return nullptr;
 		}
 
@@ -167,7 +200,10 @@ namespace mead {
 	}
 
 	ASTNodePtr Parser::takeTypedVariable(std::span<const Token> &tokens) {
+		auto log = logger("takeTypedVariable");
+
 		if (tokens.empty()) {
+			log("No tokens @ {}", tokens.front());
 			return nullptr;
 		}
 
@@ -176,16 +212,19 @@ namespace mead {
 		ASTNodePtr name = takeIdentifier(tokens);
 
 		if (!name) {
+			log("No name @ {}", tokens.front());
 			return nullptr;
 		}
 
 		if (!take(tokens, TokenType::Colon)) {
+			log("No ':' @ {}", tokens.front());
 			return nullptr;
 		}
 
 		ASTNodePtr type = takeType(tokens, nullptr);
 
 		if (!type) {
+			log("No type @ {}", tokens.front());
 			return nullptr;
 		}
 
@@ -198,9 +237,11 @@ namespace mead {
 	}
 
 	ASTNodePtr Parser::takeBlock(std::span<const Token> &tokens) {
+		auto log = logger("takeBlock");
 		Saver saver{tokens};
 
 		if (!take(tokens, TokenType::OpeningBrace)) {
+			log("No '[' @ {}", tokens.front());
 			return nullptr;
 		}
 
@@ -210,6 +251,7 @@ namespace mead {
 			ASTNodePtr statement = takeStatement(tokens);
 
 			if (!statement) {
+				log("No statement @ {}", tokens.front());
 				return nullptr;
 			}
 
@@ -221,6 +263,8 @@ namespace mead {
 	}
 
 	ASTNodePtr Parser::takeStatement(std::span<const Token> &tokens) {
+		auto log = logger("takeStatement");
+
 		if (ASTNodePtr node = takeVariableDeclaration(tokens)) {
 			return node;
 		}
@@ -229,11 +273,28 @@ namespace mead {
 			return node;
 		}
 
+		if (ASTNodePtr node = takeExpression(tokens)) {
+			if (!take(tokens, TokenType::Semicolon)) {
+				log("Expression statement is missing a semicolon");
+				return nullptr;
+			}
+
+			return node;
+		}
+
+		if (const Token *semicolon = take(tokens, TokenType::Semicolon)) {
+			return ASTNode::make(NodeType::EmptyStatement, *semicolon);
+		}
+
+		log("No statement found @ {}", tokens.front());
 		return nullptr;
 	}
 
 	ASTNodePtr Parser::takeType(std::span<const Token> &tokens, QualifiedType *type_out) {
+		auto log = logger("takeType");
+
 		if (tokens.empty()) {
+			log("No tokens @ {}", tokens.front());
 			return nullptr;
 		}
 
@@ -252,6 +313,7 @@ namespace mead {
 				if (ASTNodePtr piece = takeIdentifier(tokens)) {
 					pieces.push_back(std::move(piece));
 				} else {
+					log("No identifier @ {}", tokens.front());
 					return nullptr;
 				}
 			} while (take(tokens, TokenType::DoubleColon));
@@ -290,6 +352,7 @@ namespace mead {
 				pointer_consts.push_back(false);
 			} else if (const Token *ampersand = take(tokens, TokenType::Ampersand)) {
 				if (ref_found) {
+					log("Ref not found @ {}", tokens.front());
 					return nullptr;
 				}
 
@@ -331,11 +394,18 @@ namespace mead {
 	}
 
 	ASTNodePtr Parser::takeVariableDeclaration(std::span<const Token> &tokens) {
+		auto log = logger("takeVariableDeclaration");
 		Saver saver{tokens};
 
 		ASTNodePtr node = takeTypedVariable(tokens);
 
-		if (!node || !take(tokens, TokenType::Semicolon)) {
+		if (!node) {
+			log("No typed variable @ {}", tokens.front());
+			return nullptr;
+		}
+
+		if (!take(tokens, TokenType::Semicolon)) {
+			log("No ';' @ {}", tokens.front());
 			return nullptr;
 		}
 
@@ -344,7 +414,7 @@ namespace mead {
 	}
 
 	ASTNodePtr Parser::takeExpression(std::span<const Token> &tokens) {
-		Saver saver{tokens};
+		auto log = logger("takeExpression");
 
 		if (ASTNodePtr expr = takeConstructorExpression(tokens)) {
 			return expr;
@@ -366,11 +436,39 @@ namespace mead {
 			return expr;
 		}
 
+		if (ASTNodePtr expr = takeNewExpression(tokens)) {
+			return expr;
+		}
+
+		log("No expression found @ {}", tokens.front());
 		return nullptr;
 	}
 
+	ASTNodePtr Parser::takePrime(std::span<const Token> &tokens) {
+		auto log = logger("takePrime");
+
+		if (ASTNodePtr prime = takePostfixPrime(tokens)) {
+			return prime;
+		}
+
+		log("No prime found @ {}", tokens.front());
+		return ASTNode::make(NodeType::EmptyPrime, Token());
+	}
+
+	ASTNodePtr Parser::takeExpressionList(std::span<const Token> &tokens) {
+		logger("takeExpressionList")("Not implemented");
+		return nullptr;
+	}
+
+	ASTNodePtr Parser::takeArgumentList(std::span<const Token> &tokens) {
+		return takeExpressionList(tokens);
+	}
+
 	ASTNodePtr Parser::takeConstructorExpression(std::span<const Token> &tokens) {
+		auto log = logger("takeConstructorExpression");
+
 		if (tokens.empty()) {
+			log("No tokens @ {}", tokens.front());
 			return nullptr;
 		}
 
@@ -380,31 +478,37 @@ namespace mead {
 		ASTNodePtr type = takeType(tokens, nullptr);
 
 		if (!type) {
+			log("No type @ {}", tokens.front());
 			return nullptr;
 		}
 
 		if (!take(tokens, TokenType::OpeningParen)) {
+			log("No '(' @ {}", tokens.front());
 			return nullptr;
 		}
 
 		ASTNodePtr list = takeExpressionList(tokens);
 
 		if (!list) {
+			log("No list @ {}", tokens.front());
 			return nullptr;
 		}
 
 		if (!take(tokens, TokenType::ClosingParen)) {
+			log("No ')' @ {}", tokens.front());
 			return nullptr;
 		}
 
 		ASTNodePtr out = ASTNode::make(NodeType::ConstructorExpression, anchor);
 		type->reparent(out);
 		list->reparent(out);
+
 		saver.cancel();
 		return out;
 	}
 
 	ASTNodePtr Parser::takePrefixExpression(std::span<const Token> &tokens) {
+		auto log = logger("takePrefixExpression");
 		Saver saver{tokens};
 
 		const Token *oper = take(tokens, TokenType::DoublePlus);
@@ -412,6 +516,7 @@ namespace mead {
 		if (!oper) {
 			oper = take(tokens, TokenType::DoubleMinus);
 			if (!oper) {
+				log("No '++' or '--' @ {}", tokens.front());
 				return nullptr;
 			}
 		}
@@ -419,23 +524,27 @@ namespace mead {
 		ASTNodePtr subexpr = takeExpression(tokens);
 
 		if (!subexpr) {
+			log("No subexpression @ {}", tokens.front());
 			return nullptr;
 		}
 
 		ASTNodePtr prime = takePrime(tokens);
 
 		if (!prime) {
+			log("No prime @ {}", tokens.front());
 			return nullptr;
 		}
 
 		ASTNodePtr out = ASTNode::make(NodeType::PrefixExpression, *oper);
 		subexpr->reparent(out);
 		prime->reparent(out);
+
 		saver.cancel();
 		return out;
 	}
 
 	ASTNodePtr Parser::takeUnaryPrefixExpression(std::span<const Token> &tokens) {
+		auto log = logger("takeUnaryPrefixExpression");
 		Saver saver{tokens};
 
 		const Token *oper = nullptr;
@@ -449,64 +558,81 @@ namespace mead {
 		} else if (const Token *tilde = take(tokens, TokenType::Tilde)) {
 			oper = tilde;
 		} else {
+			log("No operator @ {}", tokens.front());
 			return nullptr;
 		}
 
 		ASTNodePtr expr = takeExpression(tokens);
 
 		if (!expr) {
+			log("No subexpression @ {}", tokens.front());
 			return nullptr;
 		}
 
 		ASTNodePtr prime = takePrime(tokens);
 
 		if (!prime) {
+			log("No prime @ {}", tokens.front());
 			return nullptr;
 		}
 
 		ASTNodePtr out = ASTNode::make(NodeType::UnaryExpression, *oper);
 		expr->reparent(out);
 		prime->reparent(out);
+
 		saver.cancel();
 		return out;
 	}
 
 	ASTNodePtr Parser::takeCastExpression(std::span<const Token> &tokens) {
+		auto log = logger("takeCastExpression");
 		Saver saver{tokens};
 
 		const Token *cast = take(tokens, TokenType::Cast);
 
 		if (!cast) {
+			log("No cast token @ {}", tokens.front());
 			return nullptr;
 		}
 
 		if (!take(tokens, TokenType::OpeningAngle)) {
+			log("No '<' @ {}", tokens.front());
 			return nullptr;
 		}
 
 		ASTNodePtr type = takeType(tokens, nullptr);
 
+		if (!type) {
+			log("No type @ {}", tokens.front());
+			return nullptr;
+		}
+
 		if (!take(tokens, TokenType::ClosingAngle)) {
+			log("No '>' @ {}", tokens.front());
 			return nullptr;
 		}
 
 		if (!take(tokens, TokenType::OpeningParen)) {
+			log("No '(' @ {}", tokens.front());
 			return nullptr;
 		}
 
 		ASTNodePtr expr = takeExpression(tokens);
 
 		if (!expr) {
+			log("No subexpression @ {}", tokens.front());
 			return nullptr;
 		}
 
 		if (!take(tokens, TokenType::ClosingParen)) {
+			log("No ')' @ {}", tokens.front());
 			return nullptr;
 		}
 
 		ASTNodePtr prime = takePrime(tokens);
 
 		if (!prime) {
+			log("No prime @ {}", tokens.front());
 			return nullptr;
 		}
 
@@ -514,11 +640,13 @@ namespace mead {
 		type->reparent(out);
 		expr->reparent(out);
 		prime->reparent(out);
+
 		saver.cancel();
 		return out;
 	}
 
 	ASTNodePtr Parser::takePostfixPrime(std::span<const Token> &tokens) {
+		auto log = logger("takePostfixPrime");
 		Saver saver{tokens};
 
 		const Token *oper = take(tokens, TokenType::DoublePlus);
@@ -526,6 +654,7 @@ namespace mead {
 		if (!oper) {
 			oper = take(tokens, TokenType::DoubleMinus);
 			if (!oper) {
+				log("No operator @ {}", tokens.front());
 				return nullptr;
 			}
 		}
@@ -533,47 +662,149 @@ namespace mead {
 		ASTNodePtr prime = takePrime(tokens);
 
 		if (!prime) {
+			log("No prime @ {}", tokens.front());
 			return nullptr;
 		}
 
 		ASTNodePtr out = ASTNode::make(NodeType::PostfixPrime, *oper);
 		prime->reparent(out);
+
 		saver.cancel();
 		return out;
 	}
 
 	ASTNodePtr Parser::takeSizeExpression(std::span<const Token> &tokens) {
+		auto log = logger("takeSizeExpression");
 		Saver saver{tokens};
 
 		const Token *token = take(tokens, TokenType::Size);
 
 		if (!token) {
+			log("No '#size' @ {}", tokens.front());
 			return nullptr;
 		}
 
 		if (!take(tokens, TokenType::OpeningParen)) {
+			log("No '(' @ {}", tokens.front());
 			return nullptr;
 		}
 
 		ASTNodePtr expr = takeExpression(tokens);
 
 		if (!expr) {
+			log("No subexpression @ {}", tokens.front());
 			return nullptr;
 		}
 
 		if (!take(tokens, TokenType::ClosingParen)) {
+			log("No ')' @ {}", tokens.front());
 			return nullptr;
 		}
 
 		ASTNodePtr prime = takePrime(tokens);
 
 		if (!prime) {
+			log("No prime @ {}", tokens.front());
 			return nullptr;
 		}
 
 		ASTNodePtr out = ASTNode::make(NodeType::SizeExpression, *token);
 		expr->reparent(out);
 		prime->reparent(out);
+
+		saver.cancel();
+		return out;
+	}
+
+	ASTNodePtr Parser::takeNewExpression(std::span<const Token> &tokens) {
+		auto log = logger("takeNewExpression");
+		Saver saver{tokens};
+
+		const Token *token = take(tokens, TokenType::New);
+
+		if (!token) {
+			log("No 'new' @ {}", tokens.front());
+			return nullptr;
+		}
+
+		ASTNodePtr type = takeType(tokens, nullptr);
+
+		if (!type) {
+			log("No type @ {}", tokens.front());
+			return nullptr;
+		}
+
+		if (take(tokens, TokenType::OpeningSquare)) {
+			log("Found '['");
+			ASTNodePtr expr = takeExpression(tokens);
+
+			if (!expr) {
+				log("No subexpression @ {}", tokens.front());
+				return nullptr;
+			}
+
+			if (!take(tokens, TokenType::ClosingSquare)) {
+				log("No ']' @ {}", tokens.front());
+				return nullptr;
+			}
+
+			ASTNodePtr prime = takePrime(tokens);
+
+			if (!prime) {
+				log("No prime @ {}", tokens.front());
+				return nullptr;
+			}
+
+			ASTNodePtr out = ASTNode::make(NodeType::ArrayNewExpression, *token);
+			type->reparent(out);
+			expr->reparent(out);
+			prime->reparent(out);
+			saver.cancel();
+			return out;
+		}
+
+		if (take(tokens, TokenType::OpeningParen)) {
+			log("Found '('");
+			ASTNodePtr list = takeArgumentList(tokens);
+
+			if (!list) {
+				log("No argument list @ {}", tokens.front());
+				return nullptr;
+			}
+
+			if (!take(tokens, TokenType::ClosingParen)) {
+				log("No ')' @ {}", tokens.front());
+				return nullptr;
+			}
+
+			ASTNodePtr prime = takePrime(tokens);
+
+			if (!prime) {
+				log("No prime @ {}", tokens.front());
+				return nullptr;
+			}
+
+			ASTNodePtr out = ASTNode::make(NodeType::SingleNewExpression, *token);
+			type->reparent(out);
+			prime->reparent(out);
+			list->reparent(out);
+
+			saver.cancel();
+			return out;
+		}
+
+		log("Short new expression");
+		ASTNodePtr prime = takePrime(tokens);
+
+		if (!prime) {
+			log("No prime @ {}", tokens.front());
+			return nullptr;
+		}
+
+		ASTNodePtr out = ASTNode::make(NodeType::SingleNewExpression, *token);
+		type->reparent(out);
+		prime->reparent(out);
+
 		saver.cancel();
 		return out;
 	}

@@ -150,6 +150,7 @@ namespace mead {
 			&tildeRule,
 			&castRule,
 			&sizeRule,
+			&newRule,
 			&identifierRule,
 		};
 	}

@@ -94,6 +94,7 @@ namespace mead {
 			LiteralLexerRule bangRule{TokenType::Minus, "!"};
 			LiteralLexerRule tildeRule{TokenType::Minus, "~"};
 			LiteralLexerRule sizeRule{TokenType::Size, "#size"};
+			LiteralLexerRule newRule{TokenType::New, "new"};
 	};
 
 	using LexerPtr = std::shared_ptr<Lexer>;

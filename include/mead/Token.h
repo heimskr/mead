@@ -10,7 +10,7 @@ namespace mead {
 		IntegerType, Void, Const, Star, Semicolon, Equals, DoubleAmpersand, Ampersand, DoublePipe, Pipe, Arrow, DoubleColon, Colon, Comma,
 		DoublePlus, DoubleMinus, Plus, Minus, Bang, Tilde, Cast,
 		OpeningSquare, ClosingSquare, OpeningParen, ClosingParen, OpeningBrace, ClosingBrace, OpeningAngle, ClosingAngle,
-		Fn, Size,
+		Fn, Size, New,
 		Identifier,
 	};
 

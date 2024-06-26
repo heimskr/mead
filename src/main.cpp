@@ -33,6 +33,7 @@ int main(int, char **) {
 				}
 			}
 			bar: i64;
+			new i8;
 		};
 	)";
 
@@ -51,6 +52,7 @@ int main(int, char **) {
 	Parser parser;
 	if (std::optional<Token> failure = parser.parse(lexer.tokens)) {
 		std::println("Parsing failed at {}", *failure);
+		parser.print();
 	} else {
 		std::println("Parsed successfully.");
 	}

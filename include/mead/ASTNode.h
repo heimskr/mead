@@ -11,6 +11,7 @@ namespace mead {
 		FunctionPrototype, FunctionDeclaration, FunctionDefinition, VariableDeclaration, VariableDefinition, Identifier, Type, Block,
 		Const, Pointer, Reference,
 		PrefixExpression, PostfixPrime, ConstructorExpression, UnaryExpression, CastExpression, SizeExpression,
+		SingleNewExpression, ArrayNewExpression, EmptyPrime, EmptyStatement,
 	};
 
 	class ASTNode: public std::enable_shared_from_this<ASTNode> {
@@ -37,6 +38,10 @@ namespace mead {
 			template <typename... Args>
 			static std::shared_ptr<ASTNode> make(Args &&...args) {
 				return std::make_shared<ASTNode>(std::forward<Args>(args)...);
+			}
+
+			const SourceLocation & location() const {
+				return token.location;
 			}
 	};
 
