@@ -4,6 +4,7 @@
 #include "mead/Token.h"
 #include "mead/TypeDB.h"
 
+#include <expected>
 #include <memory>
 #include <optional>
 #include <print>
@@ -12,8 +13,10 @@
 #include <vector>
 
 namespace mead {
-	class ASTNode;
 	class QualifiedType;
+
+	using ParseError = std::pair<std::string, Token>;
+	using ParseResult = std::expected<ASTNodePtr, ParseError>;
 
 	class Parser {
 		private:
@@ -26,33 +29,36 @@ namespace mead {
 			/** Returns the token where parsing failed if applicable, or nothing otherwise. */
 			std::optional<Token> parse(std::span<const Token> tokens);
 
+			const auto & getNodes() const { return astNodes; }
+
 		private:
 			ASTNodePtr add(ASTNodePtr);
 			const Token * peek(std::span<const Token> tokens, TokenType token_type);
 			const Token * take(std::span<const Token> &tokens, TokenType token_type);
-			ASTNodePtr takeFunctionPrototype(std::span<const Token> &tokens);
-			ASTNodePtr takeFunctionDeclaration(std::span<const Token> &tokens);
-			ASTNodePtr takeFunctionDefinition(std::span<const Token> &tokens);
-			ASTNodePtr takeIdentifier(std::span<const Token> &tokens);
-			ASTNodePtr takeTypedVariable(std::span<const Token> &tokens);
-			ASTNodePtr takeBlock(std::span<const Token> &tokens);
-			ASTNodePtr takeStatement(std::span<const Token> &tokens);
-			ASTNodePtr takeType(std::span<const Token> &tokens, QualifiedType *);
-			ASTNodePtr takeStar(std::span<const Token> &tokens);
-			ASTNodePtr takeAmpersand(std::span<const Token> &tokens);
+			ParseResult takeFunctionPrototype(std::span<const Token> &tokens);
+			ParseResult takeFunctionDeclaration(std::span<const Token> &tokens);
+			ParseResult takeFunctionDefinition(std::span<const Token> &tokens);
+			ParseResult takeIdentifier(std::span<const Token> &tokens);
+			ParseResult takeTypedVariable(std::span<const Token> &tokens);
+			ParseResult takeBlock(std::span<const Token> &tokens);
+			ParseResult takeStatement(std::span<const Token> &tokens);
+			ParseResult takeType(std::span<const Token> &tokens, QualifiedType *);
+			ParseResult takeStar(std::span<const Token> &tokens);
+			ParseResult takeAmpersand(std::span<const Token> &tokens);
+			ParseResult takeVariableDeclaration(std::span<const Token> &tokens);
+			ParseResult takeExpression(std::span<const Token> &tokens);
+			ParseResult takePrime(std::span<const Token> &tokens);
+			ParseResult takeExpressionList(std::span<const Token> &tokens);
+			ParseResult takeArgumentList(std::span<const Token> &tokens);
+			ParseResult takeConstructorExpression(std::span<const Token> &tokens);
+			ParseResult takePrefixExpression(std::span<const Token> &tokens);
+			ParseResult takeUnaryPrefixExpression(std::span<const Token> &tokens);
+			ParseResult takeCastExpression(std::span<const Token> &tokens);
+			ParseResult takePostfixPrime(std::span<const Token> &tokens);
+			ParseResult takeSizeExpression(std::span<const Token> &tokens);
+			ParseResult takeNewExpression(std::span<const Token> &tokens);
+
 			std::optional<std::string> takeIdentifierPure(std::span<const Token> &tokens);
-			ASTNodePtr takeVariableDeclaration(std::span<const Token> &tokens);
-			ASTNodePtr takeExpression(std::span<const Token> &tokens);
-			ASTNodePtr takePrime(std::span<const Token> &tokens);
-			ASTNodePtr takeExpressionList(std::span<const Token> &tokens);
-			ASTNodePtr takeArgumentList(std::span<const Token> &tokens);
-			ASTNodePtr takeConstructorExpression(std::span<const Token> &tokens);
-			ASTNodePtr takePrefixExpression(std::span<const Token> &tokens);
-			ASTNodePtr takeUnaryPrefixExpression(std::span<const Token> &tokens);
-			ASTNodePtr takeCastExpression(std::span<const Token> &tokens);
-			ASTNodePtr takePostfixPrime(std::span<const Token> &tokens);
-			ASTNodePtr takeSizeExpression(std::span<const Token> &tokens);
-			ASTNodePtr takeNewExpression(std::span<const Token> &tokens);
 
 			std::vector<std::string> logs;
 
@@ -93,6 +99,29 @@ namespace mead {
 					logs.emplace_back(std::string(level * 2, ' ') + prefix + std::format(format, std::forward<Args>(args)...));
 					return *this;
 				}
+
+				auto fail(std::string message, Token token) {
+					(*this)("{} @ {}", message, token);
+					return std::unexpected(ParseError(std::move(message), std::move(token)));
+				}
+
+				auto fail(std::string message, std::span<const Token> tokens) {
+					if (tokens.empty()) {
+						return fail(std::move(message), Token{});
+					}
+
+					return fail(std::move(message), tokens.front());
+				}
+
+				ParseResult && fail(const std::string &message, std::span<const Token> tokens, ParseResult &error) {
+					if (tokens.empty()) {
+						(*this)("{}", message);
+					} else {
+						(*this)("{} @ {}", message, tokens.front());
+					}
+
+					return std::move(error);
+				}
 			};
 
 			Logger logger(std::string prefix) {
@@ -100,6 +129,19 @@ namespace mead {
 				out("Start");
 				return out;
 			}
+
+			static auto fail(std::string message, Token token) {
+				return std::unexpected(ParseError(std::move(message), std::move(token)));
+			}
+
+			static auto fail(std::string message, std::span<const Token> span) {
+				if (span.empty()) {
+					return fail(std::move(message), Token{});
+				}
+
+				return fail(std::move(message), span.front());
+			}
+
 
 		public:
 			void print() {

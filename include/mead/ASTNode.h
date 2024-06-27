@@ -2,6 +2,7 @@
 
 #include "mead/Token.h"
 
+#include <map>
 #include <memory>
 #include <vector>
 
@@ -13,6 +14,8 @@ namespace mead {
 		PrefixExpression, PostfixPrime, ConstructorExpression, UnaryExpression, CastExpression, SizeExpression,
 		SingleNewExpression, ArrayNewExpression, EmptyPrime, EmptyStatement,
 	};
+
+	extern std::map<NodeType, const char *> nodeTypes;
 
 	class ASTNode: public std::enable_shared_from_this<ASTNode> {
 		public:
@@ -26,6 +29,7 @@ namespace mead {
 			ASTNode(NodeType type, Token token, std::weak_ptr<ASTNode> parent = {});
 
 			std::shared_ptr<ASTNode> reparent(std::weak_ptr<ASTNode>);
+			void debug(size_t padding = 0) const;
 
 			template <typename... Args>
 			std::shared_ptr<ASTNode> add(Args &&...args) {

@@ -55,5 +55,8 @@ int main(int, char **) {
 		parser.print();
 	} else {
 		std::println("Parsed successfully.");
+		for (const auto &node : parser.getNodes()) {
+			node->debug();
+		}
 	}
 }
