@@ -39,6 +39,11 @@ namespace mead {
 			ParseResult takeFunctionDeclaration(std::span<const Token> &tokens);
 			ParseResult takeFunctionDefinition(std::span<const Token> &tokens);
 			ParseResult takeIdentifier(std::span<const Token> &tokens);
+			ParseResult takeNumber(std::span<const Token> &tokens);
+			ParseResult takeString(std::span<const Token> &tokens);
+			ParseResult takeIdentifierExpression(std::span<const Token> &tokens);
+			ParseResult takeNumberExpression(std::span<const Token> &tokens);
+			ParseResult takeStringExpression(std::span<const Token> &tokens);
 			ParseResult takeTypedVariable(std::span<const Token> &tokens);
 			ParseResult takeBlock(std::span<const Token> &tokens);
 			ParseResult takeStatement(std::span<const Token> &tokens);
@@ -54,7 +59,10 @@ namespace mead {
 			ParseResult takePrefixExpression(std::span<const Token> &tokens);
 			ParseResult takeUnaryPrefixExpression(std::span<const Token> &tokens);
 			ParseResult takeCastExpression(std::span<const Token> &tokens);
+			ParseResult takeScopePrime(std::span<const Token> &tokens);
 			ParseResult takePostfixPrime(std::span<const Token> &tokens);
+			ParseResult takeArgumentsPrime(std::span<const Token> &tokens);
+			ParseResult takeSubscriptPrime(std::span<const Token> &tokens);
 			ParseResult takeSizeExpression(std::span<const Token> &tokens);
 			ParseResult takeNewExpression(std::span<const Token> &tokens);
 
@@ -101,7 +109,7 @@ namespace mead {
 				}
 
 				auto fail(std::string message, Token token) {
-					(*this)("{} @ {}", message, token);
+					(*this)("\x1b[31m{}\x1b[39m @ {}", message, token);
 					return std::unexpected(ParseError(std::move(message), std::move(token)));
 				}
 
@@ -115,12 +123,22 @@ namespace mead {
 
 				ParseResult && fail(const std::string &message, std::span<const Token> tokens, ParseResult &error) {
 					if (tokens.empty()) {
-						(*this)("{}", message);
+						(*this)("\x1b[31m{}\x1b[39m", message);
 					} else {
-						(*this)("{} @ {}", message, tokens.front());
+						(*this)("\x1b[31m{}\x1b[39m @ {}", message, tokens.front());
 					}
 
 					return std::move(error);
+				}
+
+				ParseResult && success(ParseResult &result) {
+					(*this)("\x1b[32mSuccess\x1b[39m");
+					return std::move(result);
+				}
+
+				ParseResult && success(ParseResult &&result) {
+					(*this)("\x1b[32mSuccess\x1b[39m");
+					return std::move(result);
 				}
 			};
 

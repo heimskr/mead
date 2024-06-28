@@ -10,9 +10,9 @@ namespace mead {
 	enum class NodeType {
 		Invalid,
 		FunctionPrototype, FunctionDeclaration, FunctionDefinition, VariableDeclaration, VariableDefinition, Identifier, Type, Block,
-		Const, Pointer, Reference,
+		Const, Pointer, Reference, Number, String,
 		PrefixExpression, PostfixPrime, ConstructorExpression, UnaryExpression, CastExpression, SizeExpression,
-		SingleNewExpression, ArrayNewExpression, EmptyPrime, EmptyStatement,
+		SingleNewExpression, ArrayNewExpression, EmptyPrime, EmptyStatement, ScopePrime, ArgumentsPrime, SubscriptPrime,
 	};
 
 	extern std::map<NodeType, const char *> nodeTypes;

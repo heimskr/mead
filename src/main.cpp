@@ -37,6 +37,12 @@ int main(int, char **) {
 		};
 	)";
 
+	example = R"(
+		fn main() -> i32 {
+			"hello"[42];
+		}
+	)";
+
 	Lexer lexer;
 
 	if (!lexer.lex(example)) {

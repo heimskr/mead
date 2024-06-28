@@ -27,6 +27,11 @@ namespace mead {
 		{NodeType::ArrayNewExpression, "ArrayNewExpression"},
 		{NodeType::EmptyPrime, "EmptyPrime"},
 		{NodeType::EmptyStatement, "EmptyStatement"},
+		{NodeType::ScopePrime, "ScopePrime"},
+		{NodeType::ArgumentsPrime, "ArgumentsPrime"},
+		{NodeType::SubscriptPrime, "SubscriptPrime"},
+		{NodeType::Number, "Number"},
+		{NodeType::String, "String"},
 	};
 
 	ASTNode::ASTNode():
