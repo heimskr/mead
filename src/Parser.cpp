@@ -11,39 +11,53 @@ namespace {
 	using enum mead::TokenType;
 	using enum mead::Associativity;
 
+	constexpr int     scopePrecedence = 16;
+	constexpr int   postfixPrecedence = 15;
+	constexpr int subscriptPrecedence = 15;
+	constexpr int      callPrecedence = 15;
+	constexpr int    prefixPrecedence = 14;
+	constexpr int      sizePrecedence = 14;
+	constexpr int       newPrecedence = 14;
+	constexpr int    deletePrecedence = 14;
+	constexpr int      castPrecedence = 14;
+	constexpr int     unaryPrecedence = 14;
+	constexpr int       dotPrecedence = 13;
+	constexpr int maxBinaryPrecedence = 12;
+
 	const std::map<mead::TokenType, int> precedenceMap{
-		{Star,                  11},
-		{Slash,                 11},
-		{Percent,               11},
-		{Plus,                  10},
-		{Minus,                 10},
-		{LeftShift,              9},
-		{RightShift,             9},
-		{Spaceship,              8},
-		{OpeningAngle,           7},
-		{Leq,                    7},
-		{ClosingAngle,           7},
-		{Geq,                    7},
-		{DoubleEquals,           6},
-		{NotEqual,               6},
-		{Ampersand,              5},
-		{Xor,                    4},
-		{Pipe,                   3},
-		{DoubleAmpersand,        2},
-		{DoublePipe,             1},
-		{Equals,                 0},
-		{PlusAssign,             0},
-		{MinusAssign,            0},
-		{StarAssign,             0},
-		{SlashAssign,            0},
-		{PercentAssign,          0},
-		{LeftShiftAssign,        0},
-		{RightShiftAssign,       0},
-		{AmpersandAssign,        0},
-		{XorAssign,              0},
-		{PipeAssign,             0},
-		{DoubleAmpersandAssign,  0},
-		{DoublePipeAssign,       0},
+		{Star,                  12},
+		{Slash,                 12},
+		{Percent,               12},
+		{Plus,                  11},
+		{Minus,                 11},
+		{LeftShift,             10},
+		{RightShift,            10},
+		{Spaceship,              9},
+		{OpeningAngle,           8},
+		{Leq,                    8},
+		{ClosingAngle,           8},
+		{Geq,                    8},
+		{DoubleEquals,           7},
+		{NotEqual,               7},
+		{Ampersand,              6},
+		{Xor,                    5},
+		{Pipe,                   4},
+		{DoubleAmpersand,        3},
+		{DoublePipe,             2},
+		{Equals,                 1},
+		{PlusAssign,             1},
+		{MinusAssign,            1},
+		{StarAssign,             1},
+		{SlashAssign,            1},
+		{PercentAssign,          1},
+		{LeftShiftAssign,        1},
+		{RightShiftAssign,       1},
+		{AmpersandAssign,        1},
+		{XorAssign,              1},
+		{PipeAssign,             1},
+		{DoubleAmpersandAssign,  1},
+		{DoublePipeAssign,       1},
+		{Comma,                  0},
 	};
 
 	const std::map<mead::TokenType, mead::Associativity> associativityMap{
@@ -164,10 +178,10 @@ namespace mead {
 			return log.fail("No 'fn'", tokens);
 		}
 
-		ParseResult name = takeIdentifier(tokens);
+		ParseResult name = takeIdentifierExpression(tokens, false);
 
 		if (!name) {
-			return log.fail("No '('", tokens, name);
+			return log.fail("No function name", tokens, name);
 		}
 
 		if (!take(tokens, TokenType::OpeningParen)) {
@@ -258,8 +272,8 @@ namespace mead {
 		return log.success(node);
 	}
 
-	ParseResult Parser::takeIdentifier(std::span<const Token> &tokens) {
-		auto log = logger("takeIdentifier");
+	ParseResult Parser::takeIdentifierExpression(std::span<const Token> &tokens, bool with_prime) {
+		auto log = logger("takeIdentifierExpression");
 
 		const Token *identifier = take(tokens, TokenType::Identifier);
 
@@ -267,11 +281,18 @@ namespace mead {
 			return log.fail("No identifier", tokens);
 		}
 
-		return log.success(ASTNode::make(NodeType::Identifier, *identifier));
+		ASTNodePtr node = ASTNode::make(NodeType::Identifier, *identifier);
+
+		if (with_prime) {
+			ParseResult prime = takePrime(tokens, node);
+			return log.success(prime);
+		}
+
+		return log.success(node);
 	}
 
-	ParseResult Parser::takeNumber(std::span<const Token> &tokens) {
-		auto log = logger("takeNumber");
+	ParseResult Parser::takeNumberExpression(std::span<const Token> &tokens, bool with_prime) {
+		auto log = logger("takeNumberExpression");
 
 		const Token *number = take(tokens, TokenType::IntegerLiteral);
 
@@ -282,11 +303,18 @@ namespace mead {
 			}
 		}
 
-		return log.success(ASTNode::make(NodeType::Number, *number));
+		ASTNodePtr node = ASTNode::make(NodeType::Number, *number);
+
+		if (with_prime) {
+			ParseResult prime = takePrime(tokens, node);
+			return log.success(prime);
+		}
+
+		return log.success(node);
 	}
 
-	ParseResult Parser::takeString(std::span<const Token> &tokens) {
-		auto log = logger("takeString");
+	ParseResult Parser::takeStringExpression(std::span<const Token> &tokens, bool with_prime) {
+		auto log = logger("takeStringExpression");
 
 		const Token *string = take(tokens, TokenType::StringLiteral);
 
@@ -294,62 +322,18 @@ namespace mead {
 			return log.fail("No string", tokens);
 		}
 
-		return log.success(ASTNode::make(NodeType::String, *string));
-	}
+		ASTNodePtr node = ASTNode::make(NodeType::String, *string);
 
-	ParseResult Parser::takeIdentifierExpression(std::span<const Token> &tokens) {
-		auto log = logger("takeIdentifierExpression");
-		Saver saver{tokens};
-
-		ParseResult identifier = takeIdentifier(tokens);
-
-		if (!identifier) {
-			return log.fail("No identifier", tokens, identifier);
+		if (with_prime) {
+			ParseResult prime = takePrime(tokens, node);
+			return log.success(prime);
 		}
 
-		ParseResult prime = takePrime(tokens, *identifier);
-		assert(prime);
-
-		saver.cancel();
-		return log.success(prime);
+		return log.success(node);
 	}
 
-	ParseResult Parser::takeNumberExpression(std::span<const Token> &tokens) {
-		auto log = logger("takeNumberExpression");
-		Saver saver{tokens};
-
-		ParseResult number = takeNumber(tokens);
-
-		if (!number) {
-			return log.fail("No number", tokens, number);
-		}
-
-		ParseResult prime = takePrime(tokens, *number);
-		assert(prime);
-
-		saver.cancel();
-		return log.success(prime);
-	}
-
-	ParseResult Parser::takeStringExpression(std::span<const Token> &tokens) {
-		auto log = logger("takeStringExpression");
-		Saver saver{tokens};
-
-		ParseResult string = takeString(tokens);
-
-		if (!string) {
-			return log.fail("No string", tokens, string);
-		}
-
-		ParseResult prime = takePrime(tokens, *string);
-		assert(prime);
-
-		saver.cancel();
-		return log.success(prime);
-	}
-
-	ParseResult Parser::takeParenthetical(std::span<const Token> &tokens) {
-		auto log = logger("takeParenthetical");
+	ParseResult Parser::takeParentheticalExpression(std::span<const Token> &tokens, bool with_prime) {
+		auto log = logger("takeParentheticalExpression");
 
 		if (tokens.empty()) {
 			return log.fail("No tokens", tokens);
@@ -361,7 +345,7 @@ namespace mead {
 			return log.fail("No '('", tokens);
 		}
 
-		ParseResult expr = takeExpression(tokens);
+		ParseResult expr = takeExpression(tokens, true);
 
 		if (!expr) {
 			return log.fail("No expression", tokens, expr);
@@ -371,30 +355,14 @@ namespace mead {
 			return log.fail("No ')'", tokens);
 		}
 
-		saver.cancel();
-		return log.success(expr);
-	}
-
-	ParseResult Parser::takeParentheticalExpression(std::span<const Token> &tokens) {
-		auto log = logger("takeParentheticalExpression");
-
-		if (tokens.empty()) {
-			return log.fail("No tokens", tokens);
-		}
-
-		Saver saver{tokens};
-
-		ParseResult expr = takeParenthetical(tokens);
-
-		if (expr) {
+		if (with_prime) {
 			ParseResult prime = takePrime(tokens, *expr);
-			assert(prime);
-
 			saver.cancel();
 			return log.success(prime);
 		}
 
-		return log.fail("No parenthetical", tokens, expr);
+		saver.cancel();
+		return log.success(expr);
 	}
 
 	ParseResult Parser::takeTypedVariable(std::span<const Token> &tokens) {
@@ -406,7 +374,7 @@ namespace mead {
 
 		Saver saver{tokens};
 
-		ParseResult name = takeIdentifier(tokens);
+		ParseResult name = takeIdentifierExpression(tokens, false);
 
 		if (!name) {
 			return log.fail("No name", tokens, name);
@@ -465,7 +433,7 @@ namespace mead {
 			return log.success(node);
 		}
 
-		if (ParseResult node = takeExpression(tokens)) {
+		if (ParseResult node = takeExpression(tokens, true)) {
 			if (!take(tokens, TokenType::Semicolon)) {
 				return log.fail("Expression statement is missing a semicolon", tokens);
 			}
@@ -499,7 +467,7 @@ namespace mead {
 			node = ASTNode::make(NodeType::Type, *int_type);
 		} else {
 			do {
-				if (ParseResult piece = takeIdentifier(tokens)) {
+				if (ParseResult piece = takeIdentifierExpression(tokens, false)) {
 					pieces.push_back(std::move(*piece));
 				} else {
 					return log.fail("No identifier", tokens);
@@ -588,72 +556,90 @@ namespace mead {
 		return log.success(node);
 	}
 
-	ParseResult Parser::takeExpression(std::span<const Token> &tokens) {
+	ParseResult Parser::takeExpression(std::span<const Token> &tokens, bool with_prime) {
 		auto log = logger("takeExpression");
 
-		if (ParseResult expr = takeConstructorExpression(tokens)) {
+		if (checkPrecedence(newPrecedence)) {
+			if (ParseResult expr = takeConstructorExpression(tokens, with_prime)) {
+				return log.success(expr);
+			}
+		}
+
+		if (checkPrecedence(prefixPrecedence)) {
+			if (ParseResult expr = takePrefixExpression(tokens, with_prime)) {
+				return log.success(expr);
+			}
+		}
+
+		if (checkPrecedence(unaryPrecedence)) {
+			if (ParseResult expr = takeUnaryPrefixExpression(tokens, with_prime)) {
+				return log.success(expr);
+			}
+		}
+
+		if (checkPrecedence(castPrecedence)) {
+			if (ParseResult expr = takeCastExpression(tokens, with_prime)) {
+				return log.success(expr);
+			}
+		}
+
+		if (checkPrecedence(sizePrecedence)) {
+			if (ParseResult expr = takeSizeExpression(tokens, with_prime)) {
+				return log.success(expr);
+			}
+		}
+
+		if (checkPrecedence(newPrecedence)) {
+			if (ParseResult expr = takeNewExpression(tokens, with_prime)) {
+				return log.success(expr);
+			}
+		}
+
+		if (ParseResult expr = takeIdentifierExpression(tokens, with_prime)) {
 			return log.success(expr);
 		}
 
-		if (ParseResult expr = takePrefixExpression(tokens)) {
+		if (ParseResult expr = takeNumberExpression(tokens, with_prime)) {
 			return log.success(expr);
 		}
 
-		if (ParseResult expr = takeUnaryPrefixExpression(tokens)) {
+		if (ParseResult expr = takeStringExpression(tokens, with_prime)) {
 			return log.success(expr);
 		}
 
-		if (ParseResult expr = takeCastExpression(tokens)) {
-			return log.success(expr);
-		}
-
-		if (ParseResult expr = takeSizeExpression(tokens)) {
-			return log.success(expr);
-		}
-
-		if (ParseResult expr = takeNewExpression(tokens)) {
-			return log.success(expr);
-		}
-
-		if (ParseResult expr = takeIdentifierExpression(tokens)) {
-			return log.success(expr);
-		}
-
-		if (ParseResult expr = takeNumberExpression(tokens)) {
-			return log.success(expr);
-		}
-
-		if (ParseResult expr = takeStringExpression(tokens)) {
-			return log.success(expr);
-		}
-
-		if (ParseResult expr = takeParentheticalExpression(tokens)) {
+		if (ParseResult expr = takeParentheticalExpression(tokens, with_prime)) {
 			return log.success(expr);
 		}
 
 		return log.fail("No expression", tokens);
 	}
 
-	ParseResult Parser::takePrime(std::span<const Token> &tokens, const ASTNodePtr &lhs, bool exclude_binary) {
+	ParseResult Parser::takePrime(std::span<const Token> &tokens, const ASTNodePtr &lhs, int binary_precedence) {
 		auto log = logger("takePrime");
 
-		if (ParseResult prime = takeScopePrime(tokens, lhs)) {
-			return log.success(prime);
+		if (checkPrecedence(scopePrecedence)) {
+			if (ParseResult prime = takeScopePrime(tokens, lhs)) {
+				return log.success(prime);
+			}
 		}
 
-		if (ParseResult prime = takePostfixPrime(tokens, lhs)) {
-			return log.success(prime);
+		if (checkPrecedence(postfixPrecedence)) {
+			if (ParseResult prime = takePostfixPrime(tokens, lhs)) {
+				return log.success(prime);
+			}
 		}
 
 		if (ParseResult prime = takeArgumentsPrime(tokens, lhs)) {
 			return log.success(prime);
 		}
 
-		if (ParseResult prime = takeSubscriptPrime(tokens, lhs)) {
-			return log.success(prime);
+		if (checkPrecedence(subscriptPrecedence)) {
+			if (ParseResult prime = takeSubscriptPrime(tokens, lhs)) {
+				return log.success(prime);
+			}
 		}
 
-		if (!exclude_binary) {
+		if (checkPrecedence(binary_precedence)) {
 			if (ParseResult prime = takeBinaryPrime(tokens, lhs)) {
 				return log.success(prime);
 			}
@@ -670,7 +656,7 @@ namespace mead {
 		return takeExpressionList(tokens);
 	}
 
-	ParseResult Parser::takeConstructorExpression(std::span<const Token> &tokens) {
+	ParseResult Parser::takeConstructorExpression(std::span<const Token> &tokens, bool with_prime) {
 		auto log = logger("takeConstructorExpression");
 
 		if (tokens.empty()) {
@@ -700,16 +686,22 @@ namespace mead {
 			return log.fail("No ')'", tokens);
 		}
 
-		ASTNodePtr out = ASTNode::make(NodeType::ConstructorExpression, anchor);
-		(*type)->reparent(out);
-		(*list)->reparent(out);
+		ASTNodePtr node = ASTNode::make(NodeType::ConstructorExpression, anchor);
+		(*type)->reparent(node);
+		(*list)->reparent(node);
+
+		if (with_prime) {
+			ParseResult prime = takePrime(tokens, node);
+			saver.cancel();
+			return log.success(prime);
+		}
 
 		saver.cancel();
-		return log.success(out);
+		return log.success(node);
 	}
 
-	ParseResult Parser::takePrefixExpression(std::span<const Token> &tokens) {
-		auto log = logger("takePrefixExpression");
+	ParseResult Parser::takePrefixExpression(std::span<const Token> &tokens, bool with_prime) {
+		auto log = logger("takePrefix");
 		Saver saver{tokens};
 
 		const Token *oper = take(tokens, TokenType::DoublePlus);
@@ -721,7 +713,7 @@ namespace mead {
 			}
 		}
 
-		ParseResult subexpr = takeExpression(tokens);
+		ParseResult subexpr = withMinPrecedence(prefixPrecedence, [&] { return takeExpression(tokens, false); });
 
 		if (!subexpr) {
 			return log.fail("No subexpression", tokens, subexpr);
@@ -730,14 +722,17 @@ namespace mead {
 		ASTNodePtr node = ASTNode::make(NodeType::PrefixExpression, *oper);
 		(*subexpr)->reparent(node);
 
-		ParseResult prime = takePrime(tokens, node);
-		assert(prime);
+		if (with_prime) {
+			ParseResult prime = takePrime(tokens, node);
+			saver.cancel();
+			return log.success(prime);
+		}
 
 		saver.cancel();
-		return log.success(prime);
+		return log.success(node);
 	}
 
-	ParseResult Parser::takeUnaryPrefixExpression(std::span<const Token> &tokens) {
+	ParseResult Parser::takeUnaryPrefixExpression(std::span<const Token> &tokens, bool with_prime) {
 		auto log = logger("takeUnaryPrefixExpression");
 		Saver saver{tokens};
 
@@ -755,7 +750,7 @@ namespace mead {
 			return log.fail("No operator", tokens);
 		}
 
-		ParseResult expr = takeExpression(tokens);
+		ParseResult expr = withMinPrecedence(prefixPrecedence, [&] { return takeExpression(tokens, true); });
 
 		if (!expr) {
 			return log.fail("No subexpression", tokens, expr);
@@ -764,14 +759,17 @@ namespace mead {
 		ASTNodePtr node = ASTNode::make(NodeType::UnaryExpression, *oper);
 		(*expr)->reparent(node);
 
-		ParseResult prime = takePrime(tokens, node);
-		assert(prime);
+		if (with_prime) {
+			ParseResult prime = takePrime(tokens, node);
+			saver.cancel();
+			return log.success(prime);
+		}
 
 		saver.cancel();
-		return log.success(prime);
+		return log.success(node);
 	}
 
-	ParseResult Parser::takeCastExpression(std::span<const Token> &tokens) {
+	ParseResult Parser::takeCastExpression(std::span<const Token> &tokens, bool with_prime) {
 		auto log = logger("takeCastExpression");
 		Saver saver{tokens};
 
@@ -795,29 +793,24 @@ namespace mead {
 			return log.fail("No '>'", tokens);
 		}
 
-		if (!take(tokens, TokenType::OpeningParen)) {
-			return log.fail("No '('", tokens);
-		}
-
-		ParseResult expr = takeExpression(tokens);
+		ParseResult expr = takeParentheticalExpression(tokens, false);
 
 		if (!expr) {
 			return log.fail("No subexpression", tokens, expr);
-		}
-
-		if (!take(tokens, TokenType::ClosingParen)) {
-			return log.fail("No ')'", tokens);
 		}
 
 		ASTNodePtr lhs = ASTNode::make(NodeType::CastExpression, *cast);
 		(*type)->reparent(lhs);
 		(*expr)->reparent(lhs);
 
-		ParseResult prime = takePrime(tokens, lhs);
-		assert(prime);
+		if (with_prime) {
+			ParseResult prime = takePrime(tokens, lhs);
+			saver.cancel();
+			return log.success(prime);
+		}
 
 		saver.cancel();
-		return log.success(prime);
+		return log.success(lhs);
 	}
 
 	ParseResult Parser::takeScopePrime(std::span<const Token> &tokens, const ASTNodePtr &lhs) {
@@ -830,7 +823,7 @@ namespace mead {
 			return log.fail("No '::'", tokens);
 		}
 
-		ParseResult identifier = takeIdentifier(tokens);
+		ParseResult identifier = takeIdentifierExpression(tokens, true);
 
 		if (!identifier) {
 			return log.fail("No identifier", tokens, identifier);
@@ -841,7 +834,6 @@ namespace mead {
 		(*identifier)->reparent(node);
 
 		ParseResult prime = takePrime(tokens, node);
-		assert(prime);
 
 		saver.cancel();
 		return log.success(prime);
@@ -864,9 +856,9 @@ namespace mead {
 		lhs->reparent(node);
 
 		ParseResult prime = takePrime(tokens, node);
-		assert(prime);
 
 		saver.cancel();
+
 		return log.success(prime);
 	}
 
@@ -895,7 +887,6 @@ namespace mead {
 		(*arguments)->reparent(node);
 
 		ParseResult prime = takePrime(tokens, node);
-		assert(prime);
 
 		saver.cancel();
 		return log.success(prime);
@@ -911,7 +902,7 @@ namespace mead {
 			return log.fail("No '['", tokens);
 		}
 
-		ParseResult subexpr = takeExpression(tokens);
+		ParseResult subexpr = takeExpression(tokens, true);
 
 		if (!subexpr) {
 			return log.fail("No subexpression", tokens, subexpr);
@@ -926,7 +917,6 @@ namespace mead {
 		(*subexpr)->reparent(node);
 
 		ParseResult prime = takePrime(tokens, node);
-		assert(prime);
 
 		saver.cancel();
 		return log.success(prime);
@@ -939,19 +929,23 @@ namespace mead {
 			return log.fail("No tokens", Token{});
 		}
 
-		if (ParseResult expr = takeIdentifier(tokens)) {
+		if (ParseResult expr = takeIdentifierExpression(tokens, false)) {
 			return log.success(expr);
 		}
 
-		if (ParseResult expr = takeNumber(tokens)) {
+		if (ParseResult expr = takeNumberExpression(tokens, false)) {
 			return log.success(expr);
 		}
 
-		if (ParseResult expr = takeString(tokens)) {
+		if (ParseResult expr = takeStringExpression(tokens, false)) {
 			return log.success(expr);
 		}
 
-		if (ParseResult expr = takeParenthetical(tokens)) {
+		if (ParseResult expr = takePrefixExpression(tokens, false)) {
+			return log.success(expr);
+		}
+
+		if (ParseResult expr = takeParentheticalExpression(tokens, false)) {
 			return log.success(expr);
 		}
 
@@ -982,7 +976,7 @@ namespace mead {
 
 			tokens = tokens.subspan(1);
 
-			ParseResult rhs = takeExpression(tokens);
+			ParseResult rhs = withMinPrecedence(maxBinaryPrecedence + 1, [&] { return takeExpression(tokens, true); });
 
 			if (!rhs) {
 				return log.fail("No rhs", tokens, rhs);
@@ -993,8 +987,8 @@ namespace mead {
 			(*rhs)->reparent(node);
 		}
 
-		ParseResult prime = takePrime(tokens, node, true);
-		assert(prime);
+		// ParseResult prime = withMinPrecedence(maxBinaryPrecedence + 1, [&] { return takePrime(tokens, node, maxBinaryPrecedence + 1); }); // ???
+		ParseResult prime = takePrime(tokens, node);
 
 		saver.cancel();
 		return log.success(prime);
@@ -1100,7 +1094,7 @@ namespace mead {
 		return lhs;
 	}
 
-	ParseResult Parser::takeSizeExpression(std::span<const Token> &tokens) {
+	ParseResult Parser::takeSizeExpression(std::span<const Token> &tokens, bool with_prime) {
 		auto log = logger("takeSizeExpression");
 		Saver saver{tokens};
 
@@ -1110,31 +1104,26 @@ namespace mead {
 			return log.fail("No '#size'", tokens);
 		}
 
-		if (!take(tokens, TokenType::OpeningParen)) {
-			return log.fail("No '('", tokens);
-		}
-
-		ParseResult expr = takeExpression(tokens);
+		ParseResult expr = takeParentheticalExpression(tokens, false);
 
 		if (!expr) {
 			return log.fail("No subexpression", tokens, expr);
 		}
 
-		if (!take(tokens, TokenType::ClosingParen)) {
-			return log.fail("No ')'", tokens);
-		}
-
 		ASTNodePtr node = ASTNode::make(NodeType::SizeExpression, *token);
 		(*expr)->reparent(node);
 
-		ParseResult prime = takePrime(tokens, node);
-		assert(prime);
+		if (with_prime) {
+			ParseResult prime = takePrime(tokens, node);
+			saver.cancel();
+			return log.success(prime);
+		}
 
 		saver.cancel();
-		return log.success(prime);
+		return log.success(node);
 	}
 
-	ParseResult Parser::takeNewExpression(std::span<const Token> &tokens) {
+	ParseResult Parser::takeNewExpression(std::span<const Token> &tokens, bool with_prime) {
 		auto log = logger("takeNewExpression");
 		Saver saver{tokens};
 
@@ -1152,7 +1141,7 @@ namespace mead {
 
 		if (take(tokens, TokenType::OpeningSquare)) {
 			log("Found '['");
-			ParseResult expr = takeExpression(tokens);
+			ParseResult expr = takeExpression(tokens, true);
 
 			if (!expr) {
 				return log.fail("No subexpression", tokens, expr);
@@ -1166,11 +1155,14 @@ namespace mead {
 			(*type)->reparent(node);
 			(*expr)->reparent(node);
 
-			ParseResult prime = takePrime(tokens, node);
-			assert(prime);
+			if (with_prime) {
+				ParseResult prime = takePrime(tokens, node);
+				saver.cancel();
+				return log.success(prime);
+			}
 
 			saver.cancel();
-			return log.success(prime);
+			return log.success(node);
 		}
 
 		if (take(tokens, TokenType::OpeningParen)) {
@@ -1189,11 +1181,14 @@ namespace mead {
 			(*type)->reparent(node);
 			(*list)->reparent(node);
 
-			ParseResult prime = takePrime(tokens, node);
-			assert(prime);
+			if (with_prime) {
+				ParseResult prime = takePrime(tokens, node);
+				saver.cancel();
+				return log.success(prime);
+			}
 
 			saver.cancel();
-			return log.success(prime);
+			return log.success(node);
 		}
 
 		log("Short new expression");
@@ -1201,11 +1196,14 @@ namespace mead {
 		ASTNodePtr node = ASTNode::make(NodeType::SingleNewExpression, *token);
 		(*type)->reparent(node);
 
-		ParseResult prime = takePrime(tokens, node);
-		assert(prime);
+		if (with_prime) {
+			ParseResult prime = takePrime(tokens, node);
+			saver.cancel();
+			return log.success(prime);
+		}
 
 		saver.cancel();
-		return log.success(prime);
+		return log.success(node);
 	}
 
 	std::optional<std::string> Parser::takeIdentifierPure(std::span<const Token> &tokens) {

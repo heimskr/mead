@@ -49,6 +49,12 @@ int main(int, char **) {
 	// 	}
 	// )";
 
+	example = R"(
+		fn complex() -> i32 {
+			1 + ++x + y++;
+		}
+	)";
+
 	Lexer lexer;
 
 	if (!lexer.lex(example)) {

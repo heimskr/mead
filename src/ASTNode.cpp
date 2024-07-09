@@ -48,8 +48,8 @@ namespace mead {
 	ASTNode::ASTNode():
 		valid(false) {}
 
-	ASTNode::ASTNode(NodeType type, Token token, std::weak_ptr<ASTNode> parent):
-		type(type), token(std::move(token)), weakParent(std::move(parent)), valid(true) {}
+	ASTNode::ASTNode(NodeType type, Token token, int precedence, std::weak_ptr<ASTNode> parent):
+		type(type), token(std::move(token)), weakParent(std::move(parent)), precedence(precedence), valid(true) {}
 
 	std::shared_ptr<ASTNode> ASTNode::reparent(std::weak_ptr<ASTNode> new_parent) {
 		auto self = shared_from_this();

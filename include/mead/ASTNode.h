@@ -28,10 +28,11 @@ namespace mead {
 			Token token;
 			std::weak_ptr<ASTNode> weakParent;
 			std::vector<std::shared_ptr<ASTNode>> children;
+			int precedence{};
 			bool valid;
 
 			ASTNode();
-			ASTNode(NodeType type, Token token, std::weak_ptr<ASTNode> parent = {});
+			ASTNode(NodeType type, Token token, int precedence = 0, std::weak_ptr<ASTNode> parent = {});
 
 			std::shared_ptr<ASTNode> reparent(std::weak_ptr<ASTNode>);
 			std::ostream & debug(std::ostream & = std::cout, size_t padding = 0) const;
