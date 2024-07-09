@@ -41,11 +41,13 @@ int main(int, char **) {
 		fn main() -> i32 {
 			"hello"[42] + 2 * 3 - 4 / 5;
 		}
-
-		fn unadorned() -> i32 {
-			1 + 2 + 3 + 4 + 5;
-		}
 	)";
+
+	// example = R"(
+	// 	fn unadorned() -> i32 {
+	// 		1 + 2 + 3 + 4 + 5;
+	// 	}
+	// )";
 
 	Lexer lexer;
 

@@ -33,6 +33,7 @@ namespace mead {
 		{NodeType::Number, "Number"},
 		{NodeType::String, "String"},
 		{NodeType::Binary, "Binary"},
+		{NodeType::ClimbedBinary, "ClimbedBinary"},
 	};
 
 	std::set<NodeType> primeTypes{
@@ -76,10 +77,11 @@ namespace mead {
 		return self;
 	}
 
-	void ASTNode::debug(size_t padding) const {
-		std::println("{}{}: {}", std::string(padding, ' '), nodeTypes.at(type), token);
+	std::ostream & ASTNode::debug(std::ostream &stream, size_t padding) const {
+		std::println(stream, "{}{}: {}", std::string(padding, ' '), nodeTypes.at(type), token);
 		for (const auto &child: children) {
-			child->debug(padding + 2);
+			child->debug(stream, padding + 2);
 		}
+		return stream;
 	}
 }

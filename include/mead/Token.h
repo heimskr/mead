@@ -12,7 +12,7 @@ namespace mead {
 		DoubleEquals, NotEqual, Xor, PlusAssign, MinusAssign, StarAssign, SlashAssign, PercentAssign, LeftShiftAssign, RightShiftAssign,
 		AmpersandAssign, XorAssign, PipeAssign, DoubleAmpersandAssign, DoublePipeAssign,
 		OpeningSquare, ClosingSquare, OpeningParen, ClosingParen, OpeningBrace, ClosingBrace, OpeningAngle, ClosingAngle,
-		Fn, Size, New,
+		Fn, Size, New, Dot,
 		Identifier,
 	};
 
@@ -57,5 +57,23 @@ struct std::formatter<mead::Token> {
 
 	auto format(const auto &token, std::format_context &ctx) const {
 		return std::format_to(ctx.out(), "({}: \"{}\" @ {})", int(token.type), token.value, token.location);
+	}
+};
+
+
+template <>
+struct std::formatter<const mead::Token *> {
+	formatter() = default;
+
+	constexpr auto parse(std::format_parse_context &ctx) {
+		return ctx.begin();
+	}
+
+	auto format(const auto *token, std::format_context &ctx) const {
+		if (token) {
+			return std::format_to(ctx.out(), "{}", *token);
+		}
+
+		return std::format_to(ctx.out(), "(null token)");
 	}
 };

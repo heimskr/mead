@@ -3,8 +3,84 @@
 #include "mead/Util.h"
 
 #include <cassert>
+#include <expected>
 #include <print>
 #include <set>
+
+namespace {
+	using enum mead::TokenType;
+	using enum mead::Associativity;
+
+	const std::map<mead::TokenType, int> precedenceMap{
+		{Star,                  11},
+		{Slash,                 11},
+		{Percent,               11},
+		{Plus,                  10},
+		{Minus,                 10},
+		{LeftShift,              9},
+		{RightShift,             9},
+		{Spaceship,              8},
+		{OpeningAngle,           7},
+		{Leq,                    7},
+		{ClosingAngle,           7},
+		{Geq,                    7},
+		{DoubleEquals,           6},
+		{NotEqual,               6},
+		{Ampersand,              5},
+		{Xor,                    4},
+		{Pipe,                   3},
+		{DoubleAmpersand,        2},
+		{DoublePipe,             1},
+		{Equals,                 0},
+		{PlusAssign,             0},
+		{MinusAssign,            0},
+		{StarAssign,             0},
+		{SlashAssign,            0},
+		{PercentAssign,          0},
+		{LeftShiftAssign,        0},
+		{RightShiftAssign,       0},
+		{AmpersandAssign,        0},
+		{XorAssign,              0},
+		{PipeAssign,             0},
+		{DoubleAmpersandAssign,  0},
+		{DoublePipeAssign,       0},
+	};
+
+	const std::map<mead::TokenType, mead::Associativity> associativityMap{
+		{Star,                  LeftToRight},
+		{Slash,                 LeftToRight},
+		{Percent,               LeftToRight},
+		{Plus,                  LeftToRight},
+		{Minus,                 LeftToRight},
+		{LeftShift,             LeftToRight},
+		{RightShift,            LeftToRight},
+		{Spaceship,             LeftToRight},
+		{OpeningAngle,          LeftToRight},
+		{Leq,                   LeftToRight},
+		{ClosingAngle,          LeftToRight},
+		{Geq,                   LeftToRight},
+		{DoubleEquals,          LeftToRight},
+		{NotEqual,              LeftToRight},
+		{Ampersand,             LeftToRight},
+		{Xor,                   LeftToRight},
+		{Pipe,                  LeftToRight},
+		{DoubleAmpersand,       LeftToRight},
+		{DoublePipe,            LeftToRight},
+		{Equals,                RightToLeft},
+		{PlusAssign,            RightToLeft},
+		{MinusAssign,           RightToLeft},
+		{StarAssign,            RightToLeft},
+		{SlashAssign,           RightToLeft},
+		{PercentAssign,         RightToLeft},
+		{LeftShiftAssign,       RightToLeft},
+		{RightShiftAssign,      RightToLeft},
+		{AmpersandAssign,       RightToLeft},
+		{XorAssign,             RightToLeft},
+		{PipeAssign,            RightToLeft},
+		{DoubleAmpersandAssign, RightToLeft},
+		{DoublePipeAssign,      RightToLeft},
+	};
+}
 
 namespace mead {
 	Parser::Parser() = default;
@@ -56,6 +132,10 @@ namespace mead {
 		}
 
 		return &tokens.front();
+	}
+
+	const Token * Parser::peek(std::span<const Token> tokens) {
+		return tokens.empty()? nullptr : &tokens.front();
 	}
 
 	const Token * Parser::take(std::span<const Token> &tokens, TokenType token_type) {
@@ -268,8 +348,8 @@ namespace mead {
 		return log.success(prime);
 	}
 
-	ParseResult Parser::takeParentheticalExpression(std::span<const Token> &tokens) {
-		auto log = logger("takeParentheticalExpression");
+	ParseResult Parser::takeParenthetical(std::span<const Token> &tokens) {
+		auto log = logger("takeParenthetical");
 
 		if (tokens.empty()) {
 			return log.fail("No tokens", tokens);
@@ -291,11 +371,30 @@ namespace mead {
 			return log.fail("No ')'", tokens);
 		}
 
-		ParseResult prime = takePrime(tokens, *expr);
-		assert(prime);
-
 		saver.cancel();
-		return log.success(prime);
+		return log.success(expr);
+	}
+
+	ParseResult Parser::takeParentheticalExpression(std::span<const Token> &tokens) {
+		auto log = logger("takeParentheticalExpression");
+
+		if (tokens.empty()) {
+			return log.fail("No tokens", tokens);
+		}
+
+		Saver saver{tokens};
+
+		ParseResult expr = takeParenthetical(tokens);
+
+		if (expr) {
+			ParseResult prime = takePrime(tokens, *expr);
+			assert(prime);
+
+			saver.cancel();
+			return log.success(prime);
+		}
+
+		return log.fail("No parenthetical", tokens, expr);
 	}
 
 	ParseResult Parser::takeTypedVariable(std::span<const Token> &tokens) {
@@ -378,7 +477,7 @@ namespace mead {
 			return ASTNode::make(NodeType::EmptyStatement, *semicolon);
 		}
 
-		return log.fail("No statement found", tokens);
+		return log.fail("No statement", tokens);
 	}
 
 	ParseResult Parser::takeType(std::span<const Token> &tokens, QualifiedType *type_out) {
@@ -532,10 +631,10 @@ namespace mead {
 			return log.success(expr);
 		}
 
-		return log.fail("No expression found", tokens);
+		return log.fail("No expression", tokens);
 	}
 
-	ParseResult Parser::takePrime(std::span<const Token> &tokens, const ASTNodePtr &lhs) {
+	ParseResult Parser::takePrime(std::span<const Token> &tokens, const ASTNodePtr &lhs, bool exclude_binary) {
 		auto log = logger("takePrime");
 
 		if (ParseResult prime = takeScopePrime(tokens, lhs)) {
@@ -554,8 +653,10 @@ namespace mead {
 			return log.success(prime);
 		}
 
-		if (ParseResult prime = takeBinaryPrime(tokens, lhs)) {
-			return log.success(prime);
+		if (!exclude_binary) {
+			if (ParseResult prime = takeBinaryPrime(tokens, lhs)) {
+				return log.success(prime);
+			}
 		}
 
 		return log.success(lhs);
@@ -831,6 +932,32 @@ namespace mead {
 		return log.success(prime);
 	}
 
+	ParseResult Parser::takePrimary(std::span<const Token> &tokens) {
+		auto log = logger("takePrimary");
+
+		if (tokens.empty()) {
+			return log.fail("No tokens", Token{});
+		}
+
+		if (ParseResult expr = takeIdentifier(tokens)) {
+			return log.success(expr);
+		}
+
+		if (ParseResult expr = takeNumber(tokens)) {
+			return log.success(expr);
+		}
+
+		if (ParseResult expr = takeString(tokens)) {
+			return log.success(expr);
+		}
+
+		if (ParseResult expr = takeParenthetical(tokens)) {
+			return log.success(expr);
+		}
+
+		return log.fail("No primary expression", tokens);
+	}
+
 	ParseResult Parser::takeBinaryPrime(std::span<const Token> &tokens, const ASTNodePtr &lhs) {
 		auto log = logger("takeBinaryPrime");
 
@@ -840,39 +967,137 @@ namespace mead {
 
 		Saver saver{tokens};
 
-		const Token *token = &tokens.front();
+		ASTNodePtr node;
 
-		static std::set<TokenType> valid_tokens{
-			TokenType::Star, TokenType::Slash, TokenType::Percent, TokenType::Plus, TokenType::Minus, TokenType::LeftShift,
-			TokenType::RightShift, TokenType::Spaceship, TokenType::OpeningAngle, TokenType::Leq, TokenType::ClosingAngle,
-			TokenType::Geq, TokenType::DoubleEquals, TokenType::NotEqual, TokenType::Ampersand, TokenType::Xor, TokenType::Pipe,
-			TokenType::DoubleAmpersand, TokenType::DoublePipe, TokenType::Equals, TokenType::PlusAssign, TokenType::MinusAssign,
-			TokenType::StarAssign, TokenType::SlashAssign, TokenType::PercentAssign, TokenType::LeftShiftAssign,
-			TokenType::RightShiftAssign, TokenType::AmpersandAssign, TokenType::XorAssign, TokenType::PipeAssign,
-			TokenType::DoubleAmpersandAssign, TokenType::DoublePipeAssign,
-		};
+		if (ParseResult binary_result = takeBinary(tokens, lhs)) {
+			node = *binary_result;
+			std::println("\x1b[32mBinary succeeded:\n{}\x1b[39m", *node);
+		} else {
+			std::println("\x1b[31mBinary failed: {} {}\x1b[39m", binary_result.error().first, binary_result.error().second);
+			const Token *token = &tokens.front();
 
-		if (!valid_tokens.contains(token->type)) {
-			return log.fail("Invalid token", tokens);
+			if (!precedenceMap.contains(token->type)) {
+				return log.fail("Invalid token", tokens);
+			}
+
+			tokens = tokens.subspan(1);
+
+			ParseResult rhs = takeExpression(tokens);
+
+			if (!rhs) {
+				return log.fail("No rhs", tokens, rhs);
+			}
+
+			node = ASTNode::make(NodeType::Binary, *token);
+			lhs->reparent(node);
+			(*rhs)->reparent(node);
 		}
 
-		tokens = tokens.subspan(1);
-
-		ParseResult rhs = takeExpression(tokens);
-
-		if (!rhs) {
-			return log.fail("No rhs", tokens, rhs);
-		}
-
-		ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
-		lhs->reparent(node);
-		(*rhs)->reparent(node);
-
-		ParseResult prime = takePrime(tokens, node);
+		ParseResult prime = takePrime(tokens, node, true);
 		assert(prime);
 
 		saver.cancel();
 		return log.success(prime);
+	}
+
+	ParseResult Parser::takeBinary(std::span<const Token> &tokens, ASTNodePtr lhs, int min_precedence) {
+		auto log = logger("takeBinary");
+
+		if (tokens.empty()) {
+			return log.fail("No tokens", Token{});
+		}
+
+		Saver saver{tokens};
+
+		auto lookup = [&](const Token *token) -> std::expected<std::pair<int, Associativity>, ParseError> {
+			if (!token)
+				return log.fail("No token", tokens);
+			auto iter = precedenceMap.find(token->type);
+			if (iter == precedenceMap.end())
+				return log.fail("Invalid token", tokens);
+			return std::make_pair(iter->second, associativityMap.at(token->type));
+		};
+
+		const Token *lookahead = peek(tokens);
+
+		std::println("Starting at {} with min {}", lookahead, min_precedence);
+
+		int climbs = 0;
+
+		for (;;) {
+			if (const auto pair = lookup(lookahead); !pair || pair->first < min_precedence) {
+				std::println("Lookahead lookup failed at {} for {}", __LINE__, lookahead);
+				break;
+			}
+
+			const Token *op = lookahead;
+			tokens = tokens.subspan(1);
+
+			const auto op_pair = lookup(op);
+			if (!op_pair) {
+				std::println("Op lookup failed at {} for {}", __LINE__, op);
+				// return std::unexpected(op_pair.error());
+				break;
+			}
+
+			ParseResult rhs = takePrimary(tokens);
+			if (!rhs) {
+				std::println("Primary RHS failed at {}", __LINE__);
+				// return log.fail("No rhs", tokens, rhs);
+				break;
+			}
+
+			lookahead = peek(tokens);
+			if (!lookahead) {
+				std::println("Lookahead failed at {}", __LINE__);
+				break;
+			}
+
+			const auto [op_precedence, op_associativity] = *op_pair;
+
+			for (;;) {
+				const auto lookahead_pair = lookup(lookahead);
+				if (!lookahead_pair) {
+					std::println("Lookahead lookup failed at {} for {}", __LINE__, lookahead);
+					// return std::unexpected(lookahead_pair.error());
+					break;
+					// goto done;
+				}
+
+				const auto [lookahead_precedence, lookahead_associativity] = *lookahead_pair;
+				const bool greater = lookahead_precedence > op_precedence;
+
+				if (!greater && !(lookahead_associativity == Associativity::RightToLeft && lookahead_precedence == op_precedence)) {
+					std::println("Precedence requirement failed");
+					break;
+				}
+
+				std::println("Precedence requirement passed");
+
+				auto binary_result = takeBinary(tokens, *rhs, greater? op_precedence + 1 : op_precedence);
+				if (!binary_result) {
+					// return log.fail("No binary", tokens, binary_result);
+					std::println("Binary failed at {}", __LINE__);
+					break;
+					// goto done;
+				}
+
+				rhs = *binary_result;
+				lookahead = peek(tokens);
+			}
+
+			ASTNodePtr new_lhs = ASTNode::make(NodeType::ClimbedBinary, *op);
+			lhs->reparent(new_lhs);
+			(*rhs)->reparent(new_lhs);
+			++climbs;
+
+			lhs = new_lhs;
+		}
+
+		// done:
+		std::println("Climbs: {}, min: {}", climbs, min_precedence);
+		saver.cancel();
+		return lhs;
 	}
 
 	ParseResult Parser::takeSizeExpression(std::span<const Token> &tokens) {

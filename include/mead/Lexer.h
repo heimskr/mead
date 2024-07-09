@@ -115,6 +115,7 @@ namespace mead {
 			LiteralLexerRule pipeAssignRule{TokenType::PipeAssign, "|="};
 			LiteralLexerRule doubleAmpersandAssignRule{TokenType::DoubleAmpersandAssign, "&&="};
 			LiteralLexerRule doublePipeAssignRule{TokenType::DoublePipeAssign, "||="};
+			LiteralLexerRule dotRule{TokenType::Dot, "."};
 			LiteralLexerRule sizeRule{TokenType::Size, "#size"};
 			LiteralLexerRule newRule{TokenType::New, "new"};
 	};

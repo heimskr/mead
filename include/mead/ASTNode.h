@@ -2,9 +2,12 @@
 
 #include "mead/Token.h"
 
+#include <format>
+#include <iostream>
 #include <map>
 #include <memory>
 #include <set>
+#include <sstream>
 #include <vector>
 
 namespace mead {
@@ -12,7 +15,7 @@ namespace mead {
 		Invalid,
 		FunctionPrototype, FunctionDeclaration, FunctionDefinition, VariableDeclaration, VariableDefinition, Identifier, Type, Block,
 		Const, Pointer, Reference, Number, String,
-		PrefixExpression, Postfix, ConstructorExpression, UnaryExpression, CastExpression, SizeExpression, Binary,
+		PrefixExpression, Postfix, ConstructorExpression, UnaryExpression, CastExpression, SizeExpression, Binary, ClimbedBinary,
 		SingleNewExpression, ArrayNewExpression, EmptyPrime, EmptyStatement, Scope, Arguments, Subscript,
 	};
 
@@ -31,7 +34,7 @@ namespace mead {
 			ASTNode(NodeType type, Token token, std::weak_ptr<ASTNode> parent = {});
 
 			std::shared_ptr<ASTNode> reparent(std::weak_ptr<ASTNode>);
-			void debug(size_t padding = 0) const;
+			std::ostream & debug(std::ostream & = std::cout, size_t padding = 0) const;
 
 			template <typename... Args>
 			std::shared_ptr<ASTNode> add(Args &&...args) {
@@ -53,3 +56,19 @@ namespace mead {
 
 	using ASTNodePtr = std::shared_ptr<ASTNode>;
 }
+
+template <>
+struct std::formatter<mead::ASTNode> {
+	formatter() = default;
+
+	constexpr auto parse(std::format_parse_context &ctx) {
+		return ctx.begin();
+	}
+
+	auto format(const auto &node, std::format_context &ctx) const {
+		// Can't attach padding state to std::format_context. Here's a hack.
+		std::stringstream ss;
+		node.debug(ss);
+		return std::format_to(ctx.out(), "{}", ss.str());
+	}
+};

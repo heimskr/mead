@@ -18,6 +18,8 @@ namespace mead {
 	using ParseError = std::pair<std::string, Token>;
 	using ParseResult = std::expected<ASTNodePtr, ParseError>;
 
+	enum class Associativity {None, LeftToRight, RightToLeft};
+
 	class Parser {
 		private:
 			std::vector<ASTNodePtr> astNodes;
@@ -34,6 +36,7 @@ namespace mead {
 		private:
 			ASTNodePtr add(ASTNodePtr);
 			const Token * peek(std::span<const Token> tokens, TokenType token_type);
+			const Token * peek(std::span<const Token> tokens);
 			const Token * take(std::span<const Token> &tokens, TokenType token_type);
 			ParseResult takeFunctionPrototype(std::span<const Token> &tokens);
 			ParseResult takeFunctionDeclaration(std::span<const Token> &tokens);
@@ -44,6 +47,7 @@ namespace mead {
 			ParseResult takeIdentifierExpression(std::span<const Token> &tokens);
 			ParseResult takeNumberExpression(std::span<const Token> &tokens);
 			ParseResult takeStringExpression(std::span<const Token> &tokens);
+			ParseResult takeParenthetical(std::span<const Token> &tokens);
 			ParseResult takeParentheticalExpression(std::span<const Token> &tokens);
 			ParseResult takeTypedVariable(std::span<const Token> &tokens);
 			ParseResult takeBlock(std::span<const Token> &tokens);
@@ -53,7 +57,7 @@ namespace mead {
 			ParseResult takeAmpersand(std::span<const Token> &tokens);
 			ParseResult takeVariableDeclaration(std::span<const Token> &tokens);
 			ParseResult takeExpression(std::span<const Token> &tokens);
-			ParseResult takePrime(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takePrime(std::span<const Token> &tokens, const ASTNodePtr &lhs, bool exclude_binary = false);
 			ParseResult takeExpressionList(std::span<const Token> &tokens);
 			ParseResult takeArgumentList(std::span<const Token> &tokens);
 			ParseResult takeConstructorExpression(std::span<const Token> &tokens);
@@ -64,7 +68,9 @@ namespace mead {
 			ParseResult takePostfixPrime(std::span<const Token> &tokens, const ASTNodePtr &lhs);
 			ParseResult takeArgumentsPrime(std::span<const Token> &tokens, const ASTNodePtr &lhs);
 			ParseResult takeSubscriptPrime(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takePrimary(std::span<const Token> &tokens);
 			ParseResult takeBinaryPrime(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takeBinary(std::span<const Token> &tokens, ASTNodePtr lhs, int min_precedence = 0);
 			ParseResult takeSizeExpression(std::span<const Token> &tokens);
 			ParseResult takeNewExpression(std::span<const Token> &tokens);
 
