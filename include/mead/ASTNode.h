@@ -4,6 +4,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <vector>
 
 namespace mead {
@@ -11,17 +12,18 @@ namespace mead {
 		Invalid,
 		FunctionPrototype, FunctionDeclaration, FunctionDefinition, VariableDeclaration, VariableDefinition, Identifier, Type, Block,
 		Const, Pointer, Reference, Number, String,
-		PrefixExpression, PostfixPrime, ConstructorExpression, UnaryExpression, CastExpression, SizeExpression,
+		PrefixExpression, PostfixPrime, ConstructorExpression, UnaryExpression, CastExpression, SizeExpression, BinaryPrime,
 		SingleNewExpression, ArrayNewExpression, EmptyPrime, EmptyStatement, ScopePrime, ArgumentsPrime, SubscriptPrime,
 	};
 
 	extern std::map<NodeType, const char *> nodeTypes;
+	extern std::set<NodeType> primeTypes;
 
 	class ASTNode: public std::enable_shared_from_this<ASTNode> {
 		public:
 			NodeType type{};
 			Token token;
-			std::weak_ptr<ASTNode> parent;
+			std::weak_ptr<ASTNode> weakParent;
 			std::vector<std::shared_ptr<ASTNode>> children;
 			bool valid;
 
@@ -29,6 +31,7 @@ namespace mead {
 			ASTNode(NodeType type, Token token, std::weak_ptr<ASTNode> parent = {});
 
 			std::shared_ptr<ASTNode> reparent(std::weak_ptr<ASTNode>);
+			// void movePrimes();
 			void debug(size_t padding = 0) const;
 
 			template <typename... Args>

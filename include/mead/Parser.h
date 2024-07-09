@@ -44,6 +44,7 @@ namespace mead {
 			ParseResult takeIdentifierExpression(std::span<const Token> &tokens);
 			ParseResult takeNumberExpression(std::span<const Token> &tokens);
 			ParseResult takeStringExpression(std::span<const Token> &tokens);
+			ParseResult takeParentheticalExpression(std::span<const Token> &tokens);
 			ParseResult takeTypedVariable(std::span<const Token> &tokens);
 			ParseResult takeBlock(std::span<const Token> &tokens);
 			ParseResult takeStatement(std::span<const Token> &tokens);
@@ -52,17 +53,18 @@ namespace mead {
 			ParseResult takeAmpersand(std::span<const Token> &tokens);
 			ParseResult takeVariableDeclaration(std::span<const Token> &tokens);
 			ParseResult takeExpression(std::span<const Token> &tokens);
-			ParseResult takePrime(std::span<const Token> &tokens);
+			ParseResult takePrime(std::span<const Token> &tokens, const ASTNodePtr &lhs);
 			ParseResult takeExpressionList(std::span<const Token> &tokens);
 			ParseResult takeArgumentList(std::span<const Token> &tokens);
 			ParseResult takeConstructorExpression(std::span<const Token> &tokens);
 			ParseResult takePrefixExpression(std::span<const Token> &tokens);
 			ParseResult takeUnaryPrefixExpression(std::span<const Token> &tokens);
 			ParseResult takeCastExpression(std::span<const Token> &tokens);
-			ParseResult takeScopePrime(std::span<const Token> &tokens);
-			ParseResult takePostfixPrime(std::span<const Token> &tokens);
-			ParseResult takeArgumentsPrime(std::span<const Token> &tokens);
-			ParseResult takeSubscriptPrime(std::span<const Token> &tokens);
+			ParseResult takeScopePrime(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takePostfixPrime(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takeArgumentsPrime(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takeSubscriptPrime(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takeBinaryPrime(std::span<const Token> &tokens, const ASTNodePtr &lhs);
 			ParseResult takeSizeExpression(std::span<const Token> &tokens);
 			ParseResult takeNewExpression(std::span<const Token> &tokens);
 

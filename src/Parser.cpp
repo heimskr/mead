@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <print>
+#include <set>
 
 namespace mead {
 	Parser::Parser() = default;
@@ -226,16 +227,11 @@ namespace mead {
 			return log.fail("No identifier", tokens, identifier);
 		}
 
-		ParseResult prime = takePrime(tokens);
-
-		if (!prime) {
-			return log.fail("No prime", tokens, prime);
-		}
-
-		(*prime)->reparent(*identifier);
+		ParseResult prime = takePrime(tokens, *identifier);
+		assert(prime);
 
 		saver.cancel();
-		return log.success(identifier);
+		return log.success(prime);
 	}
 
 	ParseResult Parser::takeNumberExpression(std::span<const Token> &tokens) {
@@ -248,16 +244,11 @@ namespace mead {
 			return log.fail("No number", tokens, number);
 		}
 
-		ParseResult prime = takePrime(tokens);
-
-		if (!prime) {
-			return log.fail("No prime", tokens, prime);
-		}
-
-		(*prime)->reparent(*number);
+		ParseResult prime = takePrime(tokens, *number);
+		assert(prime);
 
 		saver.cancel();
-		return log.success(number);
+		return log.success(prime);
 	}
 
 	ParseResult Parser::takeStringExpression(std::span<const Token> &tokens) {
@@ -270,16 +261,41 @@ namespace mead {
 			return log.fail("No string", tokens, string);
 		}
 
-		ParseResult prime = takePrime(tokens);
-
-		if (!prime) {
-			return log.fail("No prime", tokens, prime);
-		}
-
-		(*prime)->reparent(*string);
+		ParseResult prime = takePrime(tokens, *string);
+		assert(prime);
 
 		saver.cancel();
-		return log.success(string);
+		return log.success(prime);
+	}
+
+	ParseResult Parser::takeParentheticalExpression(std::span<const Token> &tokens) {
+		auto log = logger("takeParentheticalExpression");
+
+		if (tokens.empty()) {
+			return log.fail("No tokens", tokens);
+		}
+
+		Saver saver{tokens};
+
+		if (!take(tokens, TokenType::OpeningParen)) {
+			return log.fail("No '('", tokens);
+		}
+
+		ParseResult expr = takeExpression(tokens);
+
+		if (!expr) {
+			return log.fail("No expression", tokens, expr);
+		}
+
+		if (!take(tokens, TokenType::ClosingParen)) {
+			return log.fail("No ')'", tokens);
+		}
+
+		ParseResult prime = takePrime(tokens, *expr);
+		assert(prime);
+
+		saver.cancel();
+		return log.success(prime);
 	}
 
 	ParseResult Parser::takeTypedVariable(std::span<const Token> &tokens) {
@@ -512,29 +528,37 @@ namespace mead {
 			return log.success(expr);
 		}
 
+		if (ParseResult expr = takeParentheticalExpression(tokens)) {
+			return log.success(expr);
+		}
+
 		return log.fail("No expression found", tokens);
 	}
 
-	ParseResult Parser::takePrime(std::span<const Token> &tokens) {
+	ParseResult Parser::takePrime(std::span<const Token> &tokens, const ASTNodePtr &lhs) {
 		auto log = logger("takePrime");
 
-		if (ParseResult prime = takeScopePrime(tokens)) {
+		if (ParseResult prime = takeScopePrime(tokens, lhs)) {
 			return log.success(prime);
 		}
 
-		if (ParseResult prime = takePostfixPrime(tokens)) {
+		if (ParseResult prime = takePostfixPrime(tokens, lhs)) {
 			return log.success(prime);
 		}
 
-		if (ParseResult prime = takeArgumentsPrime(tokens)) {
+		if (ParseResult prime = takeArgumentsPrime(tokens, lhs)) {
 			return log.success(prime);
 		}
 
-		if (ParseResult prime = takeSubscriptPrime(tokens)) {
+		if (ParseResult prime = takeSubscriptPrime(tokens, lhs)) {
 			return log.success(prime);
 		}
 
-		return log.success(ASTNode::make(NodeType::EmptyPrime, Token()));
+		if (ParseResult prime = takeBinaryPrime(tokens, lhs)) {
+			return log.success(prime);
+		}
+
+		return log.success(lhs);
 	}
 
 	ParseResult Parser::takeExpressionList(std::span<const Token> &tokens) {
@@ -602,18 +626,14 @@ namespace mead {
 			return log.fail("No subexpression", tokens, subexpr);
 		}
 
-		ParseResult prime = takePrime(tokens);
+		ASTNodePtr node = ASTNode::make(NodeType::PrefixExpression, *oper);
+		(*subexpr)->reparent(node);
 
-		if (!prime) {
-			return log.fail("No prime", tokens, prime);
-		}
-
-		ASTNodePtr out = ASTNode::make(NodeType::PrefixExpression, *oper);
-		(*subexpr)->reparent(out);
-		(*prime)->reparent(out);
+		ParseResult prime = takePrime(tokens, node);
+		assert(prime);
 
 		saver.cancel();
-		return log.success(out);
+		return log.success(prime);
 	}
 
 	ParseResult Parser::takeUnaryPrefixExpression(std::span<const Token> &tokens) {
@@ -640,18 +660,14 @@ namespace mead {
 			return log.fail("No subexpression", tokens, expr);
 		}
 
-		ParseResult prime = takePrime(tokens);
+		ASTNodePtr node = ASTNode::make(NodeType::UnaryExpression, *oper);
+		(*expr)->reparent(node);
 
-		if (!prime) {
-			return log.fail("No prime", tokens, prime);
-		}
-
-		ASTNodePtr out = ASTNode::make(NodeType::UnaryExpression, *oper);
-		(*expr)->reparent(out);
-		(*prime)->reparent(out);
+		ParseResult prime = takePrime(tokens, node);
+		assert(prime);
 
 		saver.cancel();
-		return log.success(out);
+		return log.success(prime);
 	}
 
 	ParseResult Parser::takeCastExpression(std::span<const Token> &tokens) {
@@ -692,22 +708,18 @@ namespace mead {
 			return log.fail("No ')'", tokens);
 		}
 
-		ParseResult prime = takePrime(tokens);
+		ASTNodePtr lhs = ASTNode::make(NodeType::CastExpression, *cast);
+		(*type)->reparent(lhs);
+		(*expr)->reparent(lhs);
 
-		if (!prime) {
-			return log.fail("No prime", tokens, prime);
-		}
-
-		ASTNodePtr out = ASTNode::make(NodeType::CastExpression, *cast);
-		(*type)->reparent(out);
-		(*expr)->reparent(out);
-		(*prime)->reparent(out);
+		ParseResult prime = takePrime(tokens, lhs);
+		assert(prime);
 
 		saver.cancel();
-		return log.success(out);
+		return log.success(prime);
 	}
 
-	ParseResult Parser::takeScopePrime(std::span<const Token> &tokens) {
+	ParseResult Parser::takeScopePrime(std::span<const Token> &tokens, const ASTNodePtr &lhs) {
 		auto log = logger("takeScopePrime");
 		Saver saver{tokens};
 
@@ -723,21 +735,18 @@ namespace mead {
 			return log.fail("No identifier", tokens, identifier);
 		}
 
-		ParseResult prime = takePrime(tokens);
+		ASTNodePtr node = ASTNode::make(NodeType::ScopePrime, *scope);
+		lhs->reparent(node);
+		(*identifier)->reparent(node);
 
-		if (!prime) {
-			return log.fail("No prime", tokens, prime);
-		}
-
-		ASTNodePtr out = ASTNode::make(NodeType::ScopePrime, *scope);
-		(*identifier)->reparent(out);
-		(*prime)->reparent(out);
+		ParseResult prime = takePrime(tokens, node);
+		assert(prime);
 
 		saver.cancel();
-		return log.success(out);
+		return log.success(prime);
 	}
 
-	ParseResult Parser::takePostfixPrime(std::span<const Token> &tokens) {
+	ParseResult Parser::takePostfixPrime(std::span<const Token> &tokens, const ASTNodePtr &lhs) {
 		auto log = logger("takePostfixPrime");
 		Saver saver{tokens};
 
@@ -750,20 +759,17 @@ namespace mead {
 			}
 		}
 
-		ParseResult prime = takePrime(tokens);
+		ASTNodePtr node = ASTNode::make(NodeType::PostfixPrime, *oper);
+		lhs->reparent(node);
 
-		if (!prime) {
-			return log.fail("No prime", tokens, prime);
-		}
-
-		ASTNodePtr out = ASTNode::make(NodeType::PostfixPrime, *oper);
-		(*prime)->reparent(out);
+		ParseResult prime = takePrime(tokens, node);
+		assert(prime);
 
 		saver.cancel();
-		return log.success(out);
+		return log.success(prime);
 	}
 
-	ParseResult Parser::takeArgumentsPrime(std::span<const Token> &tokens) {
+	ParseResult Parser::takeArgumentsPrime(std::span<const Token> &tokens, const ASTNodePtr &lhs) {
 		auto log = logger("takeArgumentsPrime");
 		Saver saver{tokens};
 
@@ -783,21 +789,18 @@ namespace mead {
 			return log.fail("No ')'", tokens);
 		}
 
-		ParseResult prime = takePrime(tokens);
+		ASTNodePtr node = ASTNode::make(NodeType::ArgumentsPrime, *opening);
+		lhs->reparent(node);
+		(*arguments)->reparent(node);
 
-		if (!prime) {
-			return log.fail("No prime", tokens, prime);
-		}
-
-		ASTNodePtr out = ASTNode::make(NodeType::ArgumentsPrime, *opening);
-		(*arguments)->reparent(out);
-		(*prime)->reparent(out);
+		ParseResult prime = takePrime(tokens, node);
+		assert(prime);
 
 		saver.cancel();
-		return log.success(out);
+		return log.success(prime);
 	}
 
-	ParseResult Parser::takeSubscriptPrime(std::span<const Token> &tokens) {
+	ParseResult Parser::takeSubscriptPrime(std::span<const Token> &tokens, const ASTNodePtr &lhs) {
 		auto log = logger("takeSubscriptPrime");
 		Saver saver{tokens};
 
@@ -817,18 +820,59 @@ namespace mead {
 			return log.fail("No ']'", tokens);
 		}
 
-		ParseResult prime = takePrime(tokens);
+		ASTNodePtr node = ASTNode::make(NodeType::SubscriptPrime, *opening);
+		lhs->reparent(node);
+		(*subexpr)->reparent(node);
 
-		if (!prime) {
-			return log.fail("No prime", tokens, prime);
-		}
-
-		ASTNodePtr out = ASTNode::make(NodeType::SubscriptPrime, *opening);
-		(*subexpr)->reparent(out);
-		(*prime)->reparent(out);
+		ParseResult prime = takePrime(tokens, node);
+		assert(prime);
 
 		saver.cancel();
-		return log.success(out);
+		return log.success(prime);
+	}
+
+	ParseResult Parser::takeBinaryPrime(std::span<const Token> &tokens, const ASTNodePtr &lhs) {
+		auto log = logger("takeBinaryPrime");
+
+		if (tokens.empty()) {
+			return log.fail("No tokens", Token{});
+		}
+
+		Saver saver{tokens};
+
+		const Token *token = &tokens.front();
+
+		static std::set<TokenType> valid_tokens{
+			TokenType::Star, TokenType::Slash, TokenType::Percent, TokenType::Plus, TokenType::Minus, TokenType::LeftShift,
+			TokenType::RightShift, TokenType::Spaceship, TokenType::OpeningAngle, TokenType::Leq, TokenType::ClosingAngle,
+			TokenType::Geq, TokenType::DoubleEquals, TokenType::NotEqual, TokenType::Ampersand, TokenType::Xor, TokenType::Pipe,
+			TokenType::DoubleAmpersand, TokenType::DoublePipe, TokenType::Equals, TokenType::PlusAssign, TokenType::MinusAssign,
+			TokenType::StarAssign, TokenType::SlashAssign, TokenType::PercentAssign, TokenType::LeftShiftAssign,
+			TokenType::RightShiftAssign, TokenType::AmpersandAssign, TokenType::XorAssign, TokenType::PipeAssign,
+			TokenType::DoubleAmpersandAssign, TokenType::DoublePipeAssign,
+		};
+
+		if (!valid_tokens.contains(token->type)) {
+			return log.fail("Invalid token", tokens);
+		}
+
+		tokens = tokens.subspan(1);
+
+		ParseResult rhs = takeExpression(tokens);
+
+		if (!rhs) {
+			return log.fail("No rhs", tokens, rhs);
+		}
+
+		ASTNodePtr node = ASTNode::make(NodeType::BinaryPrime, *token);
+		lhs->reparent(node);
+		(*rhs)->reparent(node);
+
+		ParseResult prime = takePrime(tokens, node);
+		assert(prime);
+
+		saver.cancel();
+		return log.success(prime);
 	}
 
 	ParseResult Parser::takeSizeExpression(std::span<const Token> &tokens) {
@@ -855,18 +899,14 @@ namespace mead {
 			return log.fail("No ')'", tokens);
 		}
 
-		ParseResult prime = takePrime(tokens);
+		ASTNodePtr node = ASTNode::make(NodeType::SizeExpression, *token);
+		(*expr)->reparent(node);
 
-		if (!prime) {
-			return log.fail("No prime", tokens, prime);
-		}
-
-		ASTNodePtr out = ASTNode::make(NodeType::SizeExpression, *token);
-		(*expr)->reparent(out);
-		(*prime)->reparent(out);
+		ParseResult prime = takePrime(tokens, node);
+		assert(prime);
 
 		saver.cancel();
-		return log.success(out);
+		return log.success(prime);
 	}
 
 	ParseResult Parser::takeNewExpression(std::span<const Token> &tokens) {
@@ -897,18 +937,15 @@ namespace mead {
 				return log.fail("No ']'", tokens);
 			}
 
-			ParseResult prime = takePrime(tokens);
+			ASTNodePtr node = ASTNode::make(NodeType::ArrayNewExpression, *token);
+			(*type)->reparent(node);
+			(*expr)->reparent(node);
 
-			if (!prime) {
-				return log.fail("No prime", tokens, prime);
-			}
+			ParseResult prime = takePrime(tokens, node);
+			assert(prime);
 
-			ASTNodePtr out = ASTNode::make(NodeType::ArrayNewExpression, *token);
-			(*type)->reparent(out);
-			(*expr)->reparent(out);
-			(*prime)->reparent(out);
 			saver.cancel();
-			return log.success(out);
+			return log.success(prime);
 		}
 
 		if (take(tokens, TokenType::OpeningParen)) {
@@ -923,34 +960,27 @@ namespace mead {
 				return log.fail("No ')'", tokens);
 			}
 
-			ParseResult prime = takePrime(tokens);
+			ASTNodePtr node = ASTNode::make(NodeType::SingleNewExpression, *token);
+			(*type)->reparent(node);
+			(*list)->reparent(node);
 
-			if (!prime) {
-				return log.fail("No prime", tokens, prime);
-			}
-
-			ASTNodePtr out = ASTNode::make(NodeType::SingleNewExpression, *token);
-			(*type)->reparent(out);
-			(*prime)->reparent(out);
-			(*list)->reparent(out);
+			ParseResult prime = takePrime(tokens, node);
+			assert(prime);
 
 			saver.cancel();
-			return log.success(out);
+			return log.success(prime);
 		}
 
 		log("Short new expression");
-		ParseResult prime = takePrime(tokens);
 
-		if (!prime) {
-			return log.fail("No prime", tokens, prime);
-		}
+		ASTNodePtr node = ASTNode::make(NodeType::SingleNewExpression, *token);
+		(*type)->reparent(node);
 
-		ASTNodePtr out = ASTNode::make(NodeType::SingleNewExpression, *token);
-		(*type)->reparent(out);
-		(*prime)->reparent(out);
+		ParseResult prime = takePrime(tokens, node);
+		assert(prime);
 
 		saver.cancel();
-		return log.success(out);
+		return log.success(prime);
 	}
 
 	std::optional<std::string> Parser::takeIdentifierPure(std::span<const Token> &tokens) {

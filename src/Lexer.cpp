@@ -6,7 +6,7 @@
 
 namespace {
 	re2::RE2 floatingLiteralPattern{"^(\\d[\\d']*\\.\\d+([eE][\\-+]?\\d+))"};
-	re2::RE2 integerLiteralPattern{"^(([1-9][\\d']+)|(0x[\\da-fA-F][\\d'a-fA-F]*)|(0[0-7']*))"};
+	re2::RE2 integerLiteralPattern{"^(([1-9][\\d']*)|(0x[\\da-fA-F][\\d'a-fA-F]*)|(0[0-7']*))"};
 	re2::RE2 stringLiteralPattern{"^(\"(\\\\[\\\\0abefnrt\"]|[^\\\\\"])*\")"};
 	re2::RE2 charLiteralPattern{"^('(\\\\\\\\|\\\\[0abefnrt']|[^\\\\']|\\\\x[0-9a-fA-F]+)')"};
 	re2::RE2 integerTypePattern{"^([iu](8|16|32|64))"};
@@ -98,7 +98,15 @@ namespace mead {
 		bool out = false;
 
 		if (LexerRule *best = rules.front()) {
-			assert(!best->match.empty());
+			if (best->match.empty()) {
+				std::println("Input[{}]", input);
+				if (auto *literal = dynamic_cast<LiteralLexerRule *>(best)) {
+					std::println("Literal[{}]", literal->literal);
+				} else if (auto *regex = dynamic_cast<RegexLexerRule *>(best)) {
+					std::println("Regex[{}]", regex->regex->pattern());
+				}
+				assert(!best->match.empty());
+			}
 			input = input.substr(best->match.size());
 			SourceLocation location = currentLocation;
 			advance(best->match);
@@ -148,6 +156,27 @@ namespace mead {
 			&minusRule,
 			&bangRule,
 			&tildeRule,
+			&slashRule,
+			&percentRule,
+			&leftShiftRule,
+			&rightShiftRule,
+			&leqRule,
+			&geqRule,
+			&doubleEqualsRule,
+			&notEqualRule,
+			&xorRule,
+			&plusAssignRule,
+			&minusAssignRule,
+			&starAssignRule,
+			&slashAssignRule,
+			&percentAssignRule,
+			&leftShiftAssignRule,
+			&rightShiftAssignRule,
+			&ampersandAssignRule,
+			&xorAssignRule,
+			&pipeAssignRule,
+			&doubleAmpersandAssignRule,
+			&doublePipeAssignRule,
 			&castRule,
 			&sizeRule,
 			&newRule,

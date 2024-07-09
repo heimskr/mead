@@ -39,7 +39,19 @@ int main(int, char **) {
 
 	example = R"(
 		fn main() -> i32 {
-			"hello"[42];
+			"hello"[42] + 2 * 3 - 4 / 5;
+		}
+
+		fn unadorned() -> i32 {
+			1 + 2 + 3 + 4 + 5;
+		}
+
+		fn left() -> i32 {
+			(((1 + 2) + 3) + 4) + 5;
+		}
+
+		fn right() -> i32 {
+			1 + (2 + (3 + (4 + 5)));
 		}
 	)";
 
@@ -63,6 +75,11 @@ int main(int, char **) {
 		std::println("Parsed successfully.");
 		for (const auto &node : parser.getNodes()) {
 			node->debug();
+			// node->movePrimes();
 		}
+		// std::println("================================");
+		// for (const auto &node : parser.getNodes()) {
+		// 	node->debug();
+		// }
 	}
 }
