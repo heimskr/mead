@@ -18,30 +18,30 @@ namespace mead {
 		{NodeType::Pointer, "Pointer"},
 		{NodeType::Reference, "Reference"},
 		{NodeType::PrefixExpression, "Prefix"},
-		{NodeType::PostfixPrime, "Postfix"},
+		{NodeType::Postfix, "Postfix"},
 		{NodeType::ConstructorExpression, "Constructor"},
 		{NodeType::UnaryExpression, "Unary"},
 		{NodeType::CastExpression, "Cast"},
 		{NodeType::SizeExpression, "Size"},
 		{NodeType::SingleNewExpression, "SingleNew"},
 		{NodeType::ArrayNewExpression, "ArrayNew"},
-		{NodeType::EmptyPrime, "Empty"},
+		{NodeType::EmptyPrime, "EmptyPrime"},
 		{NodeType::EmptyStatement, "EmptyStatement"},
-		{NodeType::ScopePrime, "Scope"},
-		{NodeType::ArgumentsPrime, "Arguments"},
-		{NodeType::SubscriptPrime, "Subscript"},
+		{NodeType::Scope, "Scope"},
+		{NodeType::Arguments, "Arguments"},
+		{NodeType::Subscript, "Subscript"},
 		{NodeType::Number, "Number"},
 		{NodeType::String, "String"},
-		{NodeType::BinaryPrime, "Binary"},
+		{NodeType::Binary, "Binary"},
 	};
 
 	std::set<NodeType> primeTypes{
-		NodeType::PostfixPrime,
+		NodeType::Postfix,
 		NodeType::EmptyPrime,
-		NodeType::ScopePrime,
-		NodeType::ArgumentsPrime,
-		NodeType::SubscriptPrime,
-		NodeType::BinaryPrime,
+		NodeType::Scope,
+		NodeType::Arguments,
+		NodeType::Subscript,
+		NodeType::Binary,
 	};
 
 	ASTNode::ASTNode():
@@ -75,34 +75,6 @@ namespace mead {
 
 		return self;
 	}
-
-	// void ASTNode::movePrimes() {
-	// 	auto parent = weakParent.lock();
-
-	// 	if (!children.empty() && children.back()->type == NodeType::EmptyPrime) {
-	// 		children.pop_back();
-	// 	}
-
-	// 	const auto old_children = children;
-
-	// 	if (parent) {
-	// 		std::vector<ASTNodePtr> to_reparent;
-
-	// 		for (const ASTNodePtr &child : children) {
-	// 			if (primeTypes.contains(child->type)) {
-	// 				to_reparent.push_back(child);
-	// 			}
-	// 		}
-
-	// 		for (const ASTNodePtr &child : to_reparent) {
-	// 			child->reparent(parent);
-	// 		}
-	// 	}
-
-	// 	for (const ASTNodePtr &child : old_children) {
-	// 		child->movePrimes();
-	// 	}
-	// }
 
 	void ASTNode::debug(size_t padding) const {
 		std::println("{}{}: {}", std::string(padding, ' '), nodeTypes.at(type), token);

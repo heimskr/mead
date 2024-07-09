@@ -45,14 +45,6 @@ int main(int, char **) {
 		fn unadorned() -> i32 {
 			1 + 2 + 3 + 4 + 5;
 		}
-
-		fn left() -> i32 {
-			(((1 + 2) + 3) + 4) + 5;
-		}
-
-		fn right() -> i32 {
-			1 + (2 + (3 + (4 + 5)));
-		}
 	)";
 
 	Lexer lexer;
@@ -75,11 +67,6 @@ int main(int, char **) {
 		std::println("Parsed successfully.");
 		for (const auto &node : parser.getNodes()) {
 			node->debug();
-			// node->movePrimes();
 		}
-		// std::println("================================");
-		// for (const auto &node : parser.getNodes()) {
-		// 	node->debug();
-		// }
 	}
 }

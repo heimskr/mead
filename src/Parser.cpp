@@ -735,7 +735,7 @@ namespace mead {
 			return log.fail("No identifier", tokens, identifier);
 		}
 
-		ASTNodePtr node = ASTNode::make(NodeType::ScopePrime, *scope);
+		ASTNodePtr node = ASTNode::make(NodeType::Scope, *scope);
 		lhs->reparent(node);
 		(*identifier)->reparent(node);
 
@@ -759,7 +759,7 @@ namespace mead {
 			}
 		}
 
-		ASTNodePtr node = ASTNode::make(NodeType::PostfixPrime, *oper);
+		ASTNodePtr node = ASTNode::make(NodeType::Postfix, *oper);
 		lhs->reparent(node);
 
 		ParseResult prime = takePrime(tokens, node);
@@ -789,7 +789,7 @@ namespace mead {
 			return log.fail("No ')'", tokens);
 		}
 
-		ASTNodePtr node = ASTNode::make(NodeType::ArgumentsPrime, *opening);
+		ASTNodePtr node = ASTNode::make(NodeType::Arguments, *opening);
 		lhs->reparent(node);
 		(*arguments)->reparent(node);
 
@@ -820,7 +820,7 @@ namespace mead {
 			return log.fail("No ']'", tokens);
 		}
 
-		ASTNodePtr node = ASTNode::make(NodeType::SubscriptPrime, *opening);
+		ASTNodePtr node = ASTNode::make(NodeType::Subscript, *opening);
 		lhs->reparent(node);
 		(*subexpr)->reparent(node);
 
@@ -864,7 +864,7 @@ namespace mead {
 			return log.fail("No rhs", tokens, rhs);
 		}
 
-		ASTNodePtr node = ASTNode::make(NodeType::BinaryPrime, *token);
+		ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
 		lhs->reparent(node);
 		(*rhs)->reparent(node);
 

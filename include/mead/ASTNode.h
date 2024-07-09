@@ -12,8 +12,8 @@ namespace mead {
 		Invalid,
 		FunctionPrototype, FunctionDeclaration, FunctionDefinition, VariableDeclaration, VariableDefinition, Identifier, Type, Block,
 		Const, Pointer, Reference, Number, String,
-		PrefixExpression, PostfixPrime, ConstructorExpression, UnaryExpression, CastExpression, SizeExpression, BinaryPrime,
-		SingleNewExpression, ArrayNewExpression, EmptyPrime, EmptyStatement, ScopePrime, ArgumentsPrime, SubscriptPrime,
+		PrefixExpression, Postfix, ConstructorExpression, UnaryExpression, CastExpression, SizeExpression, Binary,
+		SingleNewExpression, ArrayNewExpression, EmptyPrime, EmptyStatement, Scope, Arguments, Subscript,
 	};
 
 	extern std::map<NodeType, const char *> nodeTypes;
@@ -31,7 +31,6 @@ namespace mead {
 			ASTNode(NodeType type, Token token, std::weak_ptr<ASTNode> parent = {});
 
 			std::shared_ptr<ASTNode> reparent(std::weak_ptr<ASTNode>);
-			// void movePrimes();
 			void debug(size_t padding = 0) const;
 
 			template <typename... Args>
