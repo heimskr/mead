@@ -15,12 +15,12 @@ namespace mead {
 		Invalid,
 		FunctionPrototype, FunctionDeclaration, FunctionDefinition, VariableDeclaration, VariableDefinition, Identifier, Type, Block,
 		Const, Pointer, Reference, Number, String,
-		PrefixExpression, Postfix, ConstructorExpression, UnaryExpression, CastExpression, SizeExpression, Binary, ClimbedBinary,
-		SingleNewExpression, ArrayNewExpression, EmptyPrime, EmptyStatement, Scope, Arguments, Subscript,
+		PrefixIncrement, PrefixDecrement, PostfixIncrement, PostfixDecrement,
+		ConstructorCall, FunctionCall, UnaryExpression, Cast, Sizeof, Binary, SingleNew, ArrayNew, Delete,
+		EmptyPrime, EmptyStatement, Scope, Arguments, Subscript, AccessMember, Deref, GetAddress, UnaryPlus, UnaryMinus, LogicalNot, BitwiseNot,
 	};
 
 	extern std::map<NodeType, const char *> nodeTypes;
-	extern std::set<NodeType> primeTypes;
 
 	class ASTNode: public std::enable_shared_from_this<ASTNode> {
 		public:

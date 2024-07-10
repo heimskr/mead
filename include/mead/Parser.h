@@ -26,7 +26,6 @@ namespace mead {
 		private:
 			std::vector<ASTNodePtr> astNodes;
 			TypeDB typeDB;
-			std::vector<int> minPrecedenceStack{0};
 
 		public:
 			Parser();
@@ -44,34 +43,48 @@ namespace mead {
 			ParseResult takeFunctionPrototype(std::span<const Token> &tokens);
 			ParseResult takeFunctionDeclaration(std::span<const Token> &tokens);
 			ParseResult takeFunctionDefinition(std::span<const Token> &tokens);
-			ParseResult takeIdentifierExpression(std::span<const Token> &tokens, bool with_prime);
-			ParseResult takeNumberExpression(std::span<const Token> &tokens, bool with_prime);
-			ParseResult takeStringExpression(std::span<const Token> &tokens, bool with_prime);
-			ParseResult takeParentheticalExpression(std::span<const Token> &tokens, bool with_prime);
+			ParseResult takeIdentifier(std::span<const Token> &tokens);
+			ParseResult takeNumber(std::span<const Token> &tokens);
+			ParseResult takeString(std::span<const Token> &tokens);
+			ParseResult takeParenthetical(std::span<const Token> &tokens);
 			ParseResult takeTypedVariable(std::span<const Token> &tokens);
 			ParseResult takeBlock(std::span<const Token> &tokens);
 			ParseResult takeStatement(std::span<const Token> &tokens);
-			ParseResult takeType(std::span<const Token> &tokens, QualifiedType *);
-			ParseResult takeStar(std::span<const Token> &tokens);
-			ParseResult takeAmpersand(std::span<const Token> &tokens);
+			ParseResult takeType(std::span<const Token> &tokens, bool include_qualifiers, QualifiedType *);
 			ParseResult takeVariableDeclaration(std::span<const Token> &tokens);
-			ParseResult takeExpression(std::span<const Token> &tokens, bool with_prime);
-			ParseResult takePrime(std::span<const Token> &tokens, const ASTNodePtr &lhs, int binary_precedence = 0);
 			ParseResult takeExpressionList(std::span<const Token> &tokens);
-			ParseResult takeArgumentList(std::span<const Token> &tokens);
-			ParseResult takeConstructorExpression(std::span<const Token> &tokens, bool with_prime);
-			ParseResult takePrefixExpression(std::span<const Token> &tokens, bool with_prime);
-			ParseResult takeUnaryPrefixExpression(std::span<const Token> &tokens, bool with_prime);
-			ParseResult takeCastExpression(std::span<const Token> &tokens, bool with_prime);
-			ParseResult takeScopePrime(std::span<const Token> &tokens, const ASTNodePtr &lhs);
-			ParseResult takePostfixPrime(std::span<const Token> &tokens, const ASTNodePtr &lhs);
-			ParseResult takeArgumentsPrime(std::span<const Token> &tokens, const ASTNodePtr &lhs);
-			ParseResult takeSubscriptPrime(std::span<const Token> &tokens, const ASTNodePtr &lhs);
-			ParseResult takePrimary(std::span<const Token> &tokens);
-			ParseResult takeBinaryPrime(std::span<const Token> &tokens, const ASTNodePtr &lhs);
-			ParseResult takeBinary(std::span<const Token> &tokens, ASTNodePtr lhs, int min_precedence = 0);
-			ParseResult takeSizeExpression(std::span<const Token> &tokens, bool with_prime);
-			ParseResult takeNewExpression(std::span<const Token> &tokens, bool with_prime);
+			ParseResult takeExpression1(std::span<const Token> &tokens);
+			ParseResult takePrime1(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takeExpression2(std::span<const Token> &tokens);
+			ParseResult takePrime2(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takeExpression3(std::span<const Token> &tokens);
+			ParseResult takeExpression4(std::span<const Token> &tokens);
+			ParseResult takePrime4(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takeExpression5(std::span<const Token> &tokens);
+			ParseResult takePrime5(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takeExpression6(std::span<const Token> &tokens);
+			ParseResult takePrime6(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takeExpression7(std::span<const Token> &tokens);
+			ParseResult takePrime7(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takeExpression8(std::span<const Token> &tokens);
+			ParseResult takePrime8(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takeExpression9(std::span<const Token> &tokens);
+			ParseResult takePrime9(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takeExpression10(std::span<const Token> &tokens);
+			ParseResult takePrime10(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takeExpression11(std::span<const Token> &tokens);
+			ParseResult takePrime11(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takeExpression12(std::span<const Token> &tokens);
+			ParseResult takePrime12(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takeExpression13(std::span<const Token> &tokens);
+			ParseResult takePrime13(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takeExpression14(std::span<const Token> &tokens);
+			ParseResult takePrime14(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takeExpression15(std::span<const Token> &tokens);
+			ParseResult takeExpression16(std::span<const Token> &tokens);
+			ParseResult takePrime16(std::span<const Token> &tokens, const ASTNodePtr &lhs);
+			ParseResult takeExpression17(std::span<const Token> &tokens);
+
 
 			std::optional<std::string> takeIdentifierPure(std::span<const Token> &tokens);
 
@@ -147,6 +160,16 @@ namespace mead {
 					(*this)("\x1b[32mSuccess\x1b[39m");
 					return std::move(result);
 				}
+
+				ParseResult && success(ParseResult &result, auto &saver) {
+					saver.cancel();
+					return success(result);
+				}
+
+				ParseResult && success(ParseResult &&result, auto &saver) {
+					saver.cancel();
+					return success(std::move(result));
+				}
 			};
 
 			Logger logger(std::string prefix) {
@@ -175,25 +198,6 @@ namespace mead {
 				for (const auto &item : copy) {
 					std::println("{}", item);
 				}
-			}
-
-			inline int minPrecedence() {
-				assert(!minPrecedenceStack.empty());
-				return minPrecedenceStack.back();
-			}
-
-			inline auto saveMinPrecedence(int precedence) {
-				return StackGuard(minPrecedenceStack, precedence);
-			}
-
-			template <typename Fn>
-			auto withMinPrecedence(int precedence, Fn &&fn) {
-				auto guard = saveMinPrecedence(precedence);
-				return fn();
-			}
-
-			inline bool checkPrecedence(int precedence) {
-				return precedence >= minPrecedence();
 			}
 	};
 }

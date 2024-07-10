@@ -116,8 +116,9 @@ namespace mead {
 			LiteralLexerRule doubleAmpersandAssignRule{TokenType::DoubleAmpersandAssign, "&&="};
 			LiteralLexerRule doublePipeAssignRule{TokenType::DoublePipeAssign, "||="};
 			LiteralLexerRule dotRule{TokenType::Dot, "."};
-			LiteralLexerRule sizeRule{TokenType::Size, "#size"};
+			LiteralLexerRule sizeofRule{TokenType::Sizeof, "sizeof"};
 			LiteralLexerRule newRule{TokenType::New, "new"};
+			LiteralLexerRule deleteRule{TokenType::Delete, "delete"};
 	};
 
 	using LexerPtr = std::shared_ptr<Lexer>;

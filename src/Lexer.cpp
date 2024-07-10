@@ -179,8 +179,9 @@ namespace mead {
 			&doublePipeAssignRule,
 			&castRule,
 			&dotRule,
-			&sizeRule,
+			&sizeofRule,
 			&newRule,
+			&deleteRule,
 			&identifierRule,
 		};
 	}
