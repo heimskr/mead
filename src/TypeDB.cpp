@@ -33,4 +33,8 @@ namespace mead {
 
 		return nullptr;
 	}
+
+	bool TypeDB::contains(const NamespacedName &name) const {
+		return types.contains(name);
+	}
 }

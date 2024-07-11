@@ -381,6 +381,12 @@ namespace mead {
 
 			name.emplace(std::move(namespaces), pieces.back()->token.value);
 			node = ASTNode::make(NodeType::Type, saver->at((pieces.size() - 1) * 2));
+
+			if (pieces.size() == 1) {
+				if (!typeDB.contains(name.value())) {
+					return log.fail("Not a known type: " + pieces.at(0)->token.value, tokens);
+				}
+			}
 		}
 
 		std::vector<bool> pointer_consts;
@@ -425,7 +431,7 @@ namespace mead {
 			}
 
 			TypePtr type = Type::make(std::move(name.value()));
-			typeDB.insert(type);
+			// typeDB.insert(type);
 			*type_out = QualifiedType(std::move(pointer_consts), is_const, is_reference, std::move(type));
 		}
 

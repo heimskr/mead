@@ -15,5 +15,6 @@ namespace mead {
 			TypePtr operator[](const NamespacedName &);
 			TypePtr at(const NamespacedName &) const;
 			TypePtr maybe(const NamespacedName &) const;
+			bool contains(const NamespacedName &) const;
 	};
 }
