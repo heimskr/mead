@@ -30,7 +30,7 @@ namespace mead {
 		{NodeType::EmptyPrime, "EmptyPrime"},
 		{NodeType::EmptyStatement, "EmptyStatement"},
 		{NodeType::Scope, "Scope"},
-		{NodeType::Arguments, "Arguments"},
+		{NodeType::Expressions, "Expressions"},
 		{NodeType::Subscript, "Subscript"},
 		{NodeType::Number, "Number"},
 		{NodeType::String, "String"},
@@ -43,6 +43,10 @@ namespace mead {
 		{NodeType::LogicalNot, "LogicalNot"},
 		{NodeType::BitwiseNot, "BitwiseNot"},
 		{NodeType::Delete, "Delete"},
+		{NodeType::Assign, "Assign"},
+		{NodeType::CompoundAssign, "CompoundAssign"},
+		{NodeType::ConditionalExpression, "ConditionalExpression"},
+		{NodeType::Comma, "Comma"},
 	};
 
 	ASTNode::ASTNode():

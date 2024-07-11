@@ -26,6 +26,8 @@ namespace mead {
 		private:
 			std::vector<ASTNodePtr> astNodes;
 			TypeDB typeDB;
+			/** False if we're inside a context (e.g., arguments list) where the comma operator is forbidden. */
+			bool commaAllowed = true;
 
 		public:
 			Parser();
@@ -84,9 +86,6 @@ namespace mead {
 			ParseResult takeExpression16(std::span<const Token> &tokens);
 			ParseResult takePrime16(std::span<const Token> &tokens, const ASTNodePtr &lhs);
 			ParseResult takeExpression17(std::span<const Token> &tokens);
-
-
-			std::optional<std::string> takeIdentifierPure(std::span<const Token> &tokens);
 
 			std::vector<std::string> logs;
 

@@ -182,6 +182,8 @@ namespace mead {
 			&sizeofRule,
 			&newRule,
 			&deleteRule,
+			&ifRule,
+			&elseRule,
 			&identifierRule,
 		};
 	}

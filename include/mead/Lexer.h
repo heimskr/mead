@@ -119,6 +119,8 @@ namespace mead {
 			LiteralLexerRule sizeofRule{TokenType::Sizeof, "sizeof"};
 			LiteralLexerRule newRule{TokenType::New, "new"};
 			LiteralLexerRule deleteRule{TokenType::Delete, "delete"};
+			LiteralLexerRule ifRule{TokenType::If, "if"};
+			LiteralLexerRule elseRule{TokenType::Else, "else"};
 	};
 
 	using LexerPtr = std::shared_ptr<Lexer>;
