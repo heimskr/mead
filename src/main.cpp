@@ -55,6 +55,13 @@ int main(int, char **) {
 	// 	}
 	// )";
 
+	example = R"(
+		fn pluses() -> i32 {
+			1+ +++1++;
+			1++-+-+--+-+-++1;
+		}
+	)";
+
 	Lexer lexer;
 
 	if (!lexer.lex(example)) {
