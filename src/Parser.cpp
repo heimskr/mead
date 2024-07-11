@@ -246,7 +246,7 @@ namespace mead {
 			return log.fail("No '('", tokens);
 		}
 
-		ParseResult expr = takeExpression1(tokens);
+		ParseResult expr = takeExpression16(tokens);
 
 		if (!expr) {
 			return log.fail("No expression", tokens, expr);
@@ -330,7 +330,7 @@ namespace mead {
 			return log.success(node);
 		}
 
-		if (ParseResult node = takeExpression1(tokens)) {
+		if (ParseResult node = takeExpression(tokens)) {
 			if (!take(tokens, TokenType::Semicolon)) {
 				return log.fail("Expression statement is missing a semicolon", tokens);
 			}
@@ -455,13 +455,35 @@ namespace mead {
 		return log.success(node);
 	}
 
+	ParseResult Parser::takeExpression0(std::span<const Token> &tokens) {
+		auto log = logger("takeExpression0");
+
+		if (ParseResult expr = takeParenthetical(tokens)) {
+			return log.success(expr);
+		}
+
+		if (ParseResult expr = takeIdentifier(tokens)) {
+			return log.success(expr);
+		}
+
+		if (ParseResult expr = takeNumber(tokens)) {
+			return log.success(expr);
+		}
+
+		if (ParseResult expr = takeString(tokens)) {
+			return log.success(expr);
+		}
+
+		return log.fail("E0 failed", tokens);
+	}
+
 	ParseResult Parser::takeExpression1(std::span<const Token> &tokens) {
 		auto log = logger("takeExpression1");
 
 		Saver saver{tokens};
 
-		// E2 E1'
-		if (ParseResult deeper = takeExpression2(tokens)) {
+		// E0 E1'
+		if (ParseResult deeper = takeExpression0(tokens)) {
 			return log.success(takePrime1(tokens, *deeper), saver);
 		}
 
@@ -504,8 +526,8 @@ namespace mead {
 			}
 		}
 
-		// E3 E2'
-		if (ParseResult deeper = takeExpression3(tokens)) {
+		// E1 E2'
+		if (ParseResult deeper = takeExpression1(tokens)) {
 			return log.success(takePrime2(tokens, *deeper), saver);
 		}
 
@@ -617,7 +639,7 @@ namespace mead {
 			}
 		}
 
-		// cast "<" Type ">" "(" E1 ")"
+		// cast "<" Type ">" "(" E ")"
 		if (const Token *cast = take(tokens, Cast)) {
 			if (take(tokens, OpeningAngle)) {
 				if (ParseResult type = takeType(tokens, true, nullptr)) {
@@ -635,7 +657,7 @@ namespace mead {
 			return log.fail("Invalid cast", tokens);
 		}
 
-		// "sizeof" "(" E1 ")"
+		// "sizeof" "(" E ")"
 		if (const Token *sizeof_token = take(tokens, Sizeof)) {
 			if (ParseResult subexpr = takeParenthetical(tokens)) {
 				ASTNodePtr node = ASTNode::make(NodeType::Sizeof, *sizeof_token);
@@ -646,7 +668,7 @@ namespace mead {
 			}
 		}
 
-		// "new" Type ("(" Exprs ")" | "[" E1 "]")?
+		// "new" Type ("(" Exprs ")" | "[" E "]")?
 		if (const Token *new_token = take(tokens, New)) {
 			if (ParseResult type = takeType(tokens, false, nullptr)) {
 				Saver subsaver{tokens};
@@ -666,7 +688,7 @@ namespace mead {
 				}
 
 				if (take(tokens, OpeningSquare)) {
-					if (ParseResult count = takeExpression1(tokens)) {
+					if (ParseResult count = takeExpression(tokens)) {
 						if (take(tokens, ClosingSquare)) {
 							ASTNodePtr node = ASTNode::make(NodeType::ArrayNew, *new_token);
 							(*type)->reparent(node);
@@ -696,8 +718,8 @@ namespace mead {
 			}
 		}
 
-		// E4
-		if (ParseResult deeper = takeExpression4(tokens)) {
+		// E2
+		if (ParseResult deeper = takeExpression2(tokens)) {
 			return log.success(deeper, saver);
 		}
 
@@ -707,8 +729,8 @@ namespace mead {
 	ParseResult Parser::takeExpression4(std::span<const Token> &tokens) {
 		auto log = logger("takeExpression4");
 
-		// E5 E4'
-		if (ParseResult deeper = takeExpression5(tokens)) {
+		// E3 E4'
+		if (ParseResult deeper = takeExpression3(tokens)) {
 			return log.success(takePrime4(tokens, *deeper));
 		} else {
 			return log.fail("E4 failed", tokens, deeper);
@@ -722,10 +744,10 @@ namespace mead {
 
 		Saver saver{tokens};
 
-		// ("*" | "/" | "%") E5 E4'
+		// ("*" | "/" | "%") E3 E4'
 		for (TokenType token_type : {Star, Slash, Percent}) {
 			if (const Token *token = take(tokens, token_type)) {
-				if (ParseResult rhs = takeExpression5(tokens)) {
+				if (ParseResult rhs = takeExpression3(tokens)) {
 					ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
 					lhs->reparent(node);
 					(*rhs)->reparent(node);
@@ -742,8 +764,8 @@ namespace mead {
 	ParseResult Parser::takeExpression5(std::span<const Token> &tokens) {
 		auto log = logger("takeExpression5");
 
-		// E6 E5'
-		if (ParseResult deeper = takeExpression6(tokens)) {
+		// E4 E5'
+		if (ParseResult deeper = takeExpression4(tokens)) {
 			return log.success(takePrime5(tokens, *deeper));
 		} else {
 			return log.fail("E5 failed", tokens, deeper);
@@ -757,10 +779,10 @@ namespace mead {
 
 		Saver saver{tokens};
 
-		// ("+" | "-") E6 E5'
+		// ("+" | "-") E4 E5'
 		for (TokenType token_type : {Plus, Minus}) {
 			if (const Token *token = take(tokens, token_type)) {
-				if (ParseResult rhs = takeExpression6(tokens)) {
+				if (ParseResult rhs = takeExpression4(tokens)) {
 					ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
 					lhs->reparent(node);
 					(*rhs)->reparent(node);
@@ -777,8 +799,8 @@ namespace mead {
 	ParseResult Parser::takeExpression6(std::span<const Token> &tokens) {
 		auto log = logger("takeExpression6");
 
-		// E7 E6'
-		if (ParseResult deeper = takeExpression7(tokens)) {
+		// E5 E6'
+		if (ParseResult deeper = takeExpression5(tokens)) {
 			return log.success(takePrime6(tokens, *deeper));
 		} else {
 			return log.fail("E6 failed", tokens, deeper);
@@ -792,10 +814,10 @@ namespace mead {
 
 		Saver saver{tokens};
 
-		// ("<<" | ">>") E7 E6'
+		// ("<<" | ">>") E5 E6'
 		for (TokenType token_type : {LeftShift, RightShift}) {
 			if (const Token *token = take(tokens, token_type)) {
-				if (ParseResult rhs = takeExpression7(tokens)) {
+				if (ParseResult rhs = takeExpression5(tokens)) {
 					ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
 					lhs->reparent(node);
 					(*rhs)->reparent(node);
@@ -812,8 +834,8 @@ namespace mead {
 	ParseResult Parser::takeExpression7(std::span<const Token> &tokens) {
 		auto log = logger("takeExpression7");
 
-		// E8 E7'
-		if (ParseResult deeper = takeExpression8(tokens)) {
+		// E6 E7'
+		if (ParseResult deeper = takeExpression6(tokens)) {
 			return log.success(takePrime7(tokens, *deeper));
 		} else {
 			return log.fail("E7 failed", tokens, deeper);
@@ -827,9 +849,9 @@ namespace mead {
 
 		Saver saver{tokens};
 
-		// "<=>" E8 E7'
+		// "<=>" E6 E7'
 		if (const Token *token = take(tokens, Spaceship)) {
-			if (ParseResult rhs = takeExpression8(tokens)) {
+			if (ParseResult rhs = takeExpression6(tokens)) {
 				ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
 				lhs->reparent(node);
 				(*rhs)->reparent(node);
@@ -845,8 +867,8 @@ namespace mead {
 	ParseResult Parser::takeExpression8(std::span<const Token> &tokens) {
 		auto log = logger("takeExpression8");
 
-		// E9 E8'
-		if (ParseResult deeper = takeExpression9(tokens)) {
+		// E7 E8'
+		if (ParseResult deeper = takeExpression7(tokens)) {
 			return log.success(takePrime8(tokens, *deeper));
 		} else {
 			return log.fail("E8 failed", tokens, deeper);
@@ -860,10 +882,10 @@ namespace mead {
 
 		Saver saver{tokens};
 
-		// ("<" | "<=" | ">" | ">=") E9 E8'
+		// ("<" | "<=" | ">" | ">=") E7 E8'
 		for (TokenType token_type : {OpeningAngle, Leq, ClosingAngle, Geq}) {
 			if (const Token *token = take(tokens, token_type)) {
-				if (ParseResult rhs = takeExpression9(tokens)) {
+				if (ParseResult rhs = takeExpression7(tokens)) {
 					ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
 					lhs->reparent(node);
 					(*rhs)->reparent(node);
@@ -880,8 +902,8 @@ namespace mead {
 	ParseResult Parser::takeExpression9(std::span<const Token> &tokens) {
 		auto log = logger("takeExpression9");
 
-		// E10 E9'
-		if (ParseResult deeper = takeExpression10(tokens)) {
+		// E8 E9'
+		if (ParseResult deeper = takeExpression8(tokens)) {
 			return log.success(takePrime9(tokens, *deeper));
 		} else {
 			return log.fail("E9 failed", tokens, deeper);
@@ -895,10 +917,10 @@ namespace mead {
 
 		Saver saver{tokens};
 
-		// ("==" | "!=") E10 E9'
+		// ("==" | "!=") E8 E9'
 		for (TokenType token_type : {DoubleEquals, NotEqual}) {
 			if (const Token *token = take(tokens, token_type)) {
-				if (ParseResult rhs = takeExpression10(tokens)) {
+				if (ParseResult rhs = takeExpression8(tokens)) {
 					ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
 					lhs->reparent(node);
 					(*rhs)->reparent(node);
@@ -915,8 +937,8 @@ namespace mead {
 	ParseResult Parser::takeExpression10(std::span<const Token> &tokens) {
 		auto log = logger("takeExpression10");
 
-		// E11 E10'
-		if (ParseResult deeper = takeExpression11(tokens)) {
+		// E9 E10'
+		if (ParseResult deeper = takeExpression9(tokens)) {
 			return log.success(takePrime10(tokens, *deeper));
 		} else {
 			return log.fail("E10 failed", tokens, deeper);
@@ -930,9 +952,9 @@ namespace mead {
 
 		Saver saver{tokens};
 
-		// "&" E11 E10'
+		// "&" E9 E10'
 		if (const Token *token = take(tokens, Ampersand)) {
-			if (ParseResult rhs = takeExpression11(tokens)) {
+			if (ParseResult rhs = takeExpression9(tokens)) {
 				ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
 				lhs->reparent(node);
 				(*rhs)->reparent(node);
@@ -948,8 +970,8 @@ namespace mead {
 	ParseResult Parser::takeExpression11(std::span<const Token> &tokens) {
 		auto log = logger("takeExpression11");
 
-		// E12 E11'
-		if (ParseResult deeper = takeExpression12(tokens)) {
+		// E10 E11'
+		if (ParseResult deeper = takeExpression10(tokens)) {
 			return log.success(takePrime11(tokens, *deeper));
 		} else {
 			return log.fail("E11 failed", tokens, deeper);
@@ -963,9 +985,9 @@ namespace mead {
 
 		Saver saver{tokens};
 
-		// "^" E12 E11'
+		// "^" E10 E11'
 		if (const Token *token = take(tokens, Xor)) {
-			if (ParseResult rhs = takeExpression12(tokens)) {
+			if (ParseResult rhs = takeExpression10(tokens)) {
 				ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
 				lhs->reparent(node);
 				(*rhs)->reparent(node);
@@ -981,8 +1003,8 @@ namespace mead {
 	ParseResult Parser::takeExpression12(std::span<const Token> &tokens) {
 		auto log = logger("takeExpression12");
 
-		// E13 E12'
-		if (ParseResult deeper = takeExpression13(tokens)) {
+		// E11 E12'
+		if (ParseResult deeper = takeExpression11(tokens)) {
 			return log.success(takePrime12(tokens, *deeper));
 		} else {
 			return log.fail("E12 failed", tokens, deeper);
@@ -996,9 +1018,9 @@ namespace mead {
 
 		Saver saver{tokens};
 
-		// "|" E13 E12'
+		// "|" E11 E12'
 		if (const Token *token = take(tokens, Pipe)) {
-			if (ParseResult rhs = takeExpression13(tokens)) {
+			if (ParseResult rhs = takeExpression11(tokens)) {
 				ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
 				lhs->reparent(node);
 				(*rhs)->reparent(node);
@@ -1014,8 +1036,8 @@ namespace mead {
 	ParseResult Parser::takeExpression13(std::span<const Token> &tokens) {
 		auto log = logger("takeExpression13");
 
-		// E14 E13'
-		if (ParseResult deeper = takeExpression14(tokens)) {
+		// E12 E13'
+		if (ParseResult deeper = takeExpression12(tokens)) {
 			return log.success(takePrime13(tokens, *deeper));
 		} else {
 			return log.fail("E13 failed", tokens, deeper);
@@ -1029,9 +1051,9 @@ namespace mead {
 
 		Saver saver{tokens};
 
-		// "&&" E14 E13'
+		// "&&" E12 E13'
 		if (const Token *token = take(tokens, DoubleAmpersand)) {
-			if (ParseResult rhs = takeExpression14(tokens)) {
+			if (ParseResult rhs = takeExpression12(tokens)) {
 				ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
 				lhs->reparent(node);
 				(*rhs)->reparent(node);
@@ -1047,8 +1069,8 @@ namespace mead {
 	ParseResult Parser::takeExpression14(std::span<const Token> &tokens) {
 		auto log = logger("takeExpression14");
 
-		// E15 E14'
-		if (ParseResult deeper = takeExpression15(tokens)) {
+		// E13 E14'
+		if (ParseResult deeper = takeExpression13(tokens)) {
 			return log.success(takePrime14(tokens, *deeper));
 		} else {
 			return log.fail("E14 failed", tokens, deeper);
@@ -1062,9 +1084,9 @@ namespace mead {
 
 		Saver saver{tokens};
 
-		// "||" E15 E14'
+		// "||" E13 E14'
 		if (const Token *token = take(tokens, DoublePipe)) {
-			if (ParseResult rhs = takeExpression15(tokens)) {
+			if (ParseResult rhs = takeExpression13(tokens)) {
 				ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
 				lhs->reparent(node);
 				(*rhs)->reparent(node);
@@ -1085,7 +1107,7 @@ namespace mead {
 		Saver saver{tokens};
 
 		if (const Token *if_token = take(tokens, If)) {
-			if (ParseResult condition = takeExpression1(tokens)) {
+			if (ParseResult condition = takeExpression(tokens)) {
 				if (ParseResult true_block = takeBlock(tokens)) {
 					if (take(tokens, Else)) {
 						if (ParseResult false_block = takeBlock(tokens)) {
@@ -1102,7 +1124,7 @@ namespace mead {
 			return log.fail("Invalid conditional expression", tokens);
 		}
 
-		if (ParseResult deeper = takeExpression16(tokens)) {
+		if (ParseResult deeper = takeExpression14(tokens)) {
 			if (const Token *equals = take(tokens, Equals)) {
 				if (ParseResult rhs = takeExpression15(tokens)) {
 					ASTNodePtr node = ASTNode::make(NodeType::Assign, *equals);
@@ -1110,7 +1132,7 @@ namespace mead {
 					(*rhs)->reparent(node);
 					return log.success(node, saver);
 				} else {
-					// We can fail here instead of defaulting to E15 := E16 because "=" isn't valid anywhere else.
+					// We can fail here instead of defaulting to E15 := E14 because "=" isn't valid anywhere else.
 					return log.fail("Invalid assignment", tokens, rhs);
 				}
 			}
@@ -1145,8 +1167,8 @@ namespace mead {
 	ParseResult Parser::takeExpression16(std::span<const Token> &tokens) {
 		auto log = logger("takeExpression16");
 
-		// E17 E16'
-		if (ParseResult deeper = takeExpression17(tokens)) {
+		// E15 E16'
+		if (ParseResult deeper = takeExpression15(tokens)) {
 			return log.success(takePrime16(tokens, *deeper));
 		} else {
 			return log.fail("E16 failed", tokens, deeper);
@@ -1159,7 +1181,7 @@ namespace mead {
 		Saver saver{tokens};
 
 		if (const Token *comma = take(tokens, TokenType::Comma)) {
-			if (ParseResult rhs = takeExpression17(tokens)) {
+			if (ParseResult rhs = takeExpression15(tokens)) {
 				ASTNodePtr node = ASTNode::make(NodeType::Comma, *comma);
 				lhs->reparent(node);
 				(*rhs)->reparent(node);
@@ -1168,32 +1190,6 @@ namespace mead {
 		}
 
 		return log.success(lhs);
-	}
-
-	ParseResult Parser::takeExpression17(std::span<const Token> &tokens) {
-		auto log = logger("takeExpression17");
-
-		if (ParseResult expr = takeParenthetical(tokens)) {
-			return log.success(expr);
-		}
-
-		if (ParseResult expr = takeIdentifier(tokens)) {
-			return log.success(expr);
-		}
-
-		if (ParseResult expr = takeNumber(tokens)) {
-			return log.success(expr);
-		}
-
-		if (ParseResult expr = takeString(tokens)) {
-			return log.success(expr);
-		}
-
-		if (ParseResult expr = takeParenthetical(tokens)) {
-			return log.success(expr);
-		}
-
-		return log.fail("E17 failed", tokens);
 	}
 
 	ParseResult Parser::takeExpressionList(std::span<const Token> &tokens) {
@@ -1210,14 +1206,14 @@ namespace mead {
 
 		ASTNodePtr node = ASTNode::make(NodeType::Expressions, tokens.front());
 
-		if (ParseResult first = takeExpression1(tokens)) {
+		if (ParseResult first = takeExpression(tokens)) {
 			(*first)->reparent(node);
 
 			for (;;) {
 				Saver subsaver{tokens};
 
 				if (take(tokens, TokenType::Comma)) {
-					if (ParseResult next = takeExpression1(tokens)) {
+					if (ParseResult next = takeExpression(tokens)) {
 						(*next)->reparent(node);
 						subsaver.cancel();
 					} else {
@@ -1228,5 +1224,9 @@ namespace mead {
 		}
 
 		return log.success(node, token_saver);
+	}
+
+	ParseResult Parser::takeExpression(std::span<const Token> &tokens) {
+		return takeExpression16(tokens);
 	}
 }

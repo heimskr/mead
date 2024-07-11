@@ -55,6 +55,8 @@ namespace mead {
 			ParseResult takeType(std::span<const Token> &tokens, bool include_qualifiers, QualifiedType *);
 			ParseResult takeVariableDeclaration(std::span<const Token> &tokens);
 			ParseResult takeExpressionList(std::span<const Token> &tokens);
+			ParseResult takeExpression(std::span<const Token> &tokens);
+			ParseResult takeExpression0(std::span<const Token> &tokens);
 			ParseResult takeExpression1(std::span<const Token> &tokens);
 			ParseResult takePrime1(std::span<const Token> &tokens, const ASTNodePtr &lhs);
 			ParseResult takeExpression2(std::span<const Token> &tokens);
@@ -85,7 +87,6 @@ namespace mead {
 			ParseResult takeExpression15(std::span<const Token> &tokens);
 			ParseResult takeExpression16(std::span<const Token> &tokens);
 			ParseResult takePrime16(std::span<const Token> &tokens, const ASTNodePtr &lhs);
-			ParseResult takeExpression17(std::span<const Token> &tokens);
 
 			std::vector<std::string> logs;
 
