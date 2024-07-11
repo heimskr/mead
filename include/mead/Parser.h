@@ -151,24 +151,32 @@ namespace mead {
 					return std::move(error);
 				}
 
-				ParseResult && success(ParseResult &result) {
-					(*this)("\x1b[32mSuccess\x1b[39m");
+				ParseResult && success(ParseResult &result, const std::string &message = {}) {
+					if (message.empty()) {
+						(*this)("\x1b[32mSuccess\x1b[39m");
+					} else {
+						(*this)("\x1b[32mSuccess\x1b[39m, {}", message);
+					}
 					return std::move(result);
 				}
 
-				ParseResult && success(ParseResult &&result) {
-					(*this)("\x1b[32mSuccess\x1b[39m");
+				ParseResult && success(ParseResult &&result, const std::string &message = {}) {
+					if (message.empty()) {
+						(*this)("\x1b[32mSuccess\x1b[39m");
+					} else {
+						(*this)("\x1b[32mSuccess\x1b[39m, {}", message);
+					}
 					return std::move(result);
 				}
 
-				ParseResult && success(ParseResult &result, auto &saver) {
+				ParseResult && success(ParseResult &result, auto &saver, const std::string &message = {}) {
 					saver.cancel();
-					return success(result);
+					return success(result, message);
 				}
 
-				ParseResult && success(ParseResult &&result, auto &saver) {
+				ParseResult && success(ParseResult &&result, auto &saver, const std::string &message = {}) {
 					saver.cancel();
-					return success(std::move(result));
+					return success(std::move(result), message);
 				}
 			};
 

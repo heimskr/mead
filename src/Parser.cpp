@@ -571,10 +571,10 @@ namespace mead {
 			return log.success(lhs);
 		}
 
-		// "[" E1 "]" E2'
+		// "[" E "]" E2'
 		if (const Token *opening = take(tokens, OpeningSquare)) {
-			if (ParseResult subscript = takeExpression1(tokens)) {
-				if (take(tokens, ClosingParen)) {
+			if (ParseResult subscript = takeExpression(tokens)) {
+				if (take(tokens, ClosingSquare)) {
 					ASTNodePtr node = ASTNode::make(NodeType::Subscript, *opening);
 					lhs->reparent(node);
 					(*subscript)->reparent(node);
