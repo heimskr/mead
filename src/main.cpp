@@ -43,30 +43,35 @@ int main(int, char **) {
 		}
 	)";
 
-	// example = R"(
-	// 	fn unadorned() -> i32 {
-	// 		1 + 2 + 3 + 4 + 5;
-	// 	}
-	// )";
+	example = R"(
+		fn unadorned() -> i32 {
+			1 + 2 + 3 + 4 + 5;
+		}
+	)";
 
-	// example = R"(
-	// 	fn complex() -> i32 {
-	// 		1 + ++x + y++;
-	// 	}
-	// )";
+	example = R"(
+		fn complex() -> i32 {
+			1 + ++x + y++;
+		}
+	)";
 
-	// example = R"(
-	// 	fn pluses() -> i32 {
-	// 		1+ +++1++;
-	// 		1++-+-+--+-+-++1;
-	// 	}
-	// )";
+	example = R"(
+		fn pluses() -> i32 {
+			1+ +++1++;
+			1++-+-+--+-+-++1;
+		}
+	)";
 
 	example = R"(
 		fn def() -> i32 {
 			foo: i32 = 40 + 2;
-			foo;
-			void(1, if 2 { 3, 4, 5; } else { 6, 7, 8; }, 9);
+			if 0 {
+				if 1 {
+					foo;
+				}
+			} else {
+				void(1, if 2 { 3, 4, 5; } else { 6, 7, 8; }, 9);
+			}
 		}
 	)";
 

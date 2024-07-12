@@ -18,7 +18,7 @@ namespace mead {
 		PrefixIncrement, PrefixDecrement, PostfixIncrement, PostfixDecrement,
 		ConstructorCall, FunctionCall, UnaryExpression, Cast, Sizeof, Binary, SingleNew, ArrayNew, Delete,
 		EmptyPrime, EmptyStatement, Scope, Expressions, Subscript, AccessMember, Deref, GetAddress, UnaryPlus, UnaryMinus, LogicalNot, BitwiseNot,
-		Assign, CompoundAssign, ConditionalExpression, Comma, ExpressionStatement,
+		Assign, CompoundAssign, ConditionalExpression, Comma, ExpressionStatement, IfStatement,
 	};
 
 	extern std::map<NodeType, const char *> nodeTypes;

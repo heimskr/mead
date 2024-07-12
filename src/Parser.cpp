@@ -334,6 +334,10 @@ namespace mead {
 			return log.success(node);
 		}
 
+		if (ParseResult node = takeConditional(tokens)) {
+			return log.success(node);
+		}
+
 		if (ParseResult expr = takeExpression(tokens)) {
 			if (!take(tokens, TokenType::Semicolon)) {
 				return log.fail("Expression statement is missing a semicolon", tokens);
@@ -499,6 +503,50 @@ namespace mead {
 		ASTNodePtr node = ASTNode::make(NodeType::VariableDefinition, *equals);
 		(*variable)->reparent(node);
 		(*expr)->reparent(node);
+
+		return log.success(node, saver);
+	}
+
+	ParseResult Parser::takeConditional(std::span<const Token> &tokens) {
+		auto log = logger("takeConditional");
+		Saver saver{tokens};
+
+		const Token *if_token = take(tokens, TokenType::If);
+
+		if (!if_token) {
+			return log.fail("No 'if'", tokens);
+		}
+
+		ParseResult condition = takeExpression(tokens);
+
+		if (!condition) {
+			return log.fail("No expression", tokens, condition);
+		}
+
+		ParseResult if_true = takeBlock(tokens);
+
+		if (!if_true) {
+			return log.fail("No true block", tokens, if_true);
+		}
+
+		if (take(tokens, TokenType::Else)) {
+			ParseResult if_false = takeBlock(tokens);
+
+			if (!if_false) {
+				return log.fail("No false block", tokens, if_false);
+			}
+
+			ASTNodePtr node = ASTNode::make(NodeType::IfStatement, *if_token);
+			(*condition)->reparent(node);
+			(*if_true)->reparent(node);
+			(*if_false)->reparent(node);
+
+			return log.success(node, saver);
+		}
+
+		ASTNodePtr node = ASTNode::make(NodeType::IfStatement, *if_token);
+		(*condition)->reparent(node);
+		(*if_true)->reparent(node);
 
 		return log.success(node, saver);
 	}
