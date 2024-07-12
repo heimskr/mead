@@ -12,7 +12,7 @@ namespace mead {
 		DoubleEquals, NotEqual, Xor, PlusAssign, MinusAssign, StarAssign, SlashAssign, PercentAssign, LeftShiftAssign, RightShiftAssign,
 		AmpersandAssign, XorAssign, PipeAssign, DoubleAmpersandAssign, DoublePipeAssign,
 		OpeningSquare, ClosingSquare, OpeningParen, ClosingParen, OpeningBrace, ClosingBrace, OpeningAngle, ClosingAngle,
-		Fn, Sizeof, New, Dot, Delete, If, Else,
+		Fn, Sizeof, New, Dot, Delete, If, Else, Return,
 		Identifier,
 	};
 

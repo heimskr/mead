@@ -338,6 +338,10 @@ namespace mead {
 			return log.success(node);
 		}
 
+		if (ParseResult node = takeReturn(tokens)) {
+			return log.success(node);
+		}
+
 		if (ParseResult expr = takeExpression(tokens)) {
 			if (!take(tokens, TokenType::Semicolon)) {
 				return log.fail("Expression statement is missing a semicolon", tokens);
@@ -547,6 +551,33 @@ namespace mead {
 		ASTNodePtr node = ASTNode::make(NodeType::IfStatement, *if_token);
 		(*condition)->reparent(node);
 		(*if_true)->reparent(node);
+
+		return log.success(node, saver);
+	}
+
+	ParseResult Parser::takeReturn(std::span<const Token> &tokens) {
+		auto log = logger("takeReturn");
+
+		const Token *return_token = take(tokens, TokenType::Return);
+
+		if (!return_token) {
+			return log.fail("No 'return'", tokens);
+		}
+
+		Saver saver{tokens};
+
+		ParseResult expr = takeExpression(tokens);
+
+		if (!expr) {
+			return log.fail("No expression", tokens, expr);
+		}
+
+		if (!take(tokens, TokenType::Semicolon)) {
+			return log.fail("No ';'", tokens);
+		}
+
+		ASTNodePtr node = ASTNode::make(NodeType::ReturnStatement, *return_token);
+		(*expr)->reparent(node);
 
 		return log.success(node, saver);
 	}

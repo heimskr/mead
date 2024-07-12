@@ -67,6 +67,7 @@ int main(int, char **) {
 			foo: i32 = 40 + 2;
 			if 0 {
 				if 1 {
+					return -42;
 					foo;
 				}
 			} else {

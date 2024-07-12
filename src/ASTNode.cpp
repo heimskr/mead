@@ -49,6 +49,7 @@ namespace mead {
 		{NodeType::Comma, "Comma"},
 		{NodeType::ExpressionStatement, "ExpressionStatement"},
 		{NodeType::IfStatement, "IfStatement"},
+		{NodeType::ReturnStatement, "ReturnStatement"},
 	};
 
 	ASTNode::ASTNode():
