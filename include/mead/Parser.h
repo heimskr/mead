@@ -54,6 +54,7 @@ namespace mead {
 			ParseResult takeStatement(std::span<const Token> &tokens);
 			ParseResult takeType(std::span<const Token> &tokens, bool include_qualifiers, QualifiedType *);
 			ParseResult takeVariableDeclaration(std::span<const Token> &tokens);
+			ParseResult takeVariableDefinition(std::span<const Token> &tokens);
 			ParseResult takeExpressionList(std::span<const Token> &tokens);
 			ParseResult takeExpression(std::span<const Token> &tokens);
 			ParseResult takeExpression0(std::span<const Token> &tokens);

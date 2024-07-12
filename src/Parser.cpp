@@ -39,8 +39,9 @@ namespace mead {
 			if (ParseResult result = takeVariableDeclaration(tokens)) {
 				log("Adding variable declaration @ {}", (*result)->location());
 				add(*result);
-			// } else if (ParseResult result = takeVariableDefinition(tokens)) {
-			// 	add(*result);
+			} else if (ParseResult result = takeVariableDefinition(tokens)) {
+				log("Adding variable definition @ {}", (*result)->location());
+				add(*result);
 			} else if (ParseResult result = takeFunctionDeclaration(tokens)) {
 				log("Adding function declaration @ {}", (*result)->location());
 				add(*result);
@@ -49,7 +50,6 @@ namespace mead {
 				add(*result);
 			} else if (const Token *semicolon = take(tokens, TokenType::Semicolon)) {
 				log("Skipping semicolon @ {}", semicolon->location);
-				;
 			} else {
 				log("Giving up at {}", tokens.front().location);
 				return tokens.front();
@@ -326,16 +326,23 @@ namespace mead {
 			return log.success(node);
 		}
 
+		if (ParseResult node = takeVariableDefinition(tokens)) {
+			return log.success(node);
+		}
+
 		if (ParseResult node = takeBlock(tokens)) {
 			return log.success(node);
 		}
 
-		if (ParseResult node = takeExpression(tokens)) {
+		if (ParseResult expr = takeExpression(tokens)) {
 			if (!take(tokens, TokenType::Semicolon)) {
 				return log.fail("Expression statement is missing a semicolon", tokens);
 			}
 
-			return log.success(node);
+			ASTNodePtr statement = ASTNode::make(NodeType::ExpressionStatement, (*expr)->token);
+			(*expr)->reparent(statement);
+
+			return log.success(statement);
 		}
 
 		if (const Token *semicolon = take(tokens, TokenType::Semicolon)) {
@@ -362,6 +369,8 @@ namespace mead {
 
 		if (const Token *int_type = take(tokens, TokenType::IntegerType)) {
 			node = ASTNode::make(NodeType::Type, *int_type);
+		} else if (const Token *void_type = take(tokens, TokenType::Void)) {
+			node = ASTNode::make(NodeType::Type, *void_type);
 		} else {
 			do {
 				if (ParseResult piece = takeIdentifier(tokens)) {
@@ -459,6 +468,39 @@ namespace mead {
 
 		saver.cancel();
 		return log.success(node);
+	}
+
+	ParseResult Parser::takeVariableDefinition(std::span<const Token> &tokens) {
+		auto log = logger("takeVariableDefinition");
+		Saver saver{tokens};
+
+		ParseResult variable = takeTypedVariable(tokens);
+
+		if (!variable) {
+			return log.fail("No typed variable", tokens, variable);
+		}
+
+		const Token *equals = take(tokens, TokenType::Equals);
+
+		if (!equals) {
+			return log.fail("No '='", tokens);
+		}
+
+		ParseResult expr = takeExpression(tokens);
+
+		if (!expr) {
+			return log.fail("No expression", tokens, expr);
+		}
+
+		if (!take(tokens, TokenType::Semicolon)) {
+			return log.fail("No ';'", tokens);
+		}
+
+		ASTNodePtr node = ASTNode::make(NodeType::VariableDefinition, *equals);
+		(*variable)->reparent(node);
+		(*expr)->reparent(node);
+
+		return log.success(node, saver);
 	}
 
 	ParseResult Parser::takeExpression0(std::span<const Token> &tokens) {
@@ -1186,12 +1228,14 @@ namespace mead {
 
 		Saver saver{tokens};
 
-		if (const Token *comma = take(tokens, TokenType::Comma)) {
-			if (ParseResult rhs = takeExpression15(tokens)) {
-				ASTNodePtr node = ASTNode::make(NodeType::Comma, *comma);
-				lhs->reparent(node);
-				(*rhs)->reparent(node);
-				return log.success(takePrime16(tokens, node), saver);
+		if (commaAllowed) {
+			if (const Token *comma = take(tokens, TokenType::Comma)) {
+				if (ParseResult rhs = takeExpression15(tokens)) {
+					ASTNodePtr node = ASTNode::make(NodeType::Comma, *comma);
+					lhs->reparent(node);
+					(*rhs)->reparent(node);
+					return log.success(takePrime16(tokens, node), saver);
+				}
 			}
 		}
 
@@ -1225,6 +1269,8 @@ namespace mead {
 					} else {
 						break;
 					}
+				} else {
+					break;
 				}
 			}
 		}
