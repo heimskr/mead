@@ -5,7 +5,7 @@
 #include <print>
 
 namespace {
-	re2::RE2 floatingLiteralPattern{"^(\\d[\\d']*\\.\\d+([eE][\\-+]?\\d+))"};
+	re2::RE2 floatingLiteralPattern{"^(\\d[\\d']*\\.\\d+([eE][\\-+]?\\d+)?)"};
 	re2::RE2 integerLiteralPattern{"^(([1-9][\\d']*)|(0x[\\da-fA-F][\\d'a-fA-F]*)|(0[0-7']*))"};
 	re2::RE2 stringLiteralPattern{"^(\"(\\\\[\\\\0abefnrt\"]|[^\\\\\"])*\")"};
 	re2::RE2 charLiteralPattern{"^('(\\\\\\\\|\\\\[0abefnrt']|[^\\\\']|\\\\x[0-9a-fA-F]+)')"};

@@ -64,7 +64,7 @@ int main(int, char **) {
 
 	example = R"(
 		fn def() -> i32 {
-			foo: i32 = 40 + 2;
+			foo: i32 const*& const = 40 + 2;
 			if 0 {
 				if 1 {
 					return -42;
@@ -73,6 +73,18 @@ int main(int, char **) {
 			} else {
 				void(1, if 2 { 3, 4, 5; } else { 6, 7, 8; }, 9);
 			}
+		}
+	)";
+
+	example = R"(
+		fn dot() -> void {
+			foo: i32*;
+			bar: i32 = 64;
+			foo = bar.&;
+			bar = foo.*;
+			foo.*.&.*;
+			bar.&.*.&;
+			1.0.&;
 		}
 	)";
 
