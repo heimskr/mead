@@ -1,6 +1,38 @@
 #pragma once
 
+#include <format>
+#include <string>
+#include <sstream>
+
 namespace mead {
+	template <typename C>
+	void join(const C &container, std::format_context &ctx, std::string_view delimiter = ", ") {
+		bool first = true;
+		for (const auto &item : container) {
+			if (first) {
+				first = false;
+				std::format_to(ctx.out(), "{}", item);
+			} else {
+				std::format_to(ctx.out(), "{}{}", delimiter, item);
+			}
+		}
+	}
+
+	template <typename C>
+	std::string join(const C &container, std::string_view delimiter = ", ") {
+		std::stringstream out;
+		bool first = true;
+		for (const auto &item : container) {
+			if (first) {
+				first = false;
+				std::print(out, "{}", item);
+			} else {
+				std::print(out, "{}{}", delimiter, item);
+			}
+		}
+		return out.str();
+	}
+
 	template <typename T>
 	class Saver {
 		private:
