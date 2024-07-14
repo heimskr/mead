@@ -24,7 +24,7 @@ namespace mead {
 
 		for (const LLVMValuePtr &value : this->values) {
 			if (*value->getType() != *array_type->subtype)
-				throw std::invalid_argument("Array subvalue type doesn't match subtype");
+				throw std::invalid_argument("Array subvalue type doesn't match array subtype");
 		}
 	}
 

@@ -16,6 +16,7 @@ namespace mead {
 			CompilerResult compile(std::span<const ASTNodePtr>);
 
 		private:
-			CompilerResult compileGlobalVariable(const ASTNodePtr &);
+			CompilerResult compileGlobalVariable(const ASTNode &);
+			CompilerResult compileFunction(const ASTNode &);
 	};
 }

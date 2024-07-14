@@ -9,6 +9,7 @@ namespace mead {
 		{NodeType::FunctionPrototype, "FunctionPrototype"},
 		{NodeType::FunctionDeclaration, "FunctionDeclaration"},
 		{NodeType::FunctionDefinition, "FunctionDefinition"},
+		{NodeType::FunctionCall, "FunctionCall"},
 		{NodeType::VariableDeclaration, "VariableDeclaration"},
 		{NodeType::VariableDefinition, "VariableDefinition"},
 		{NodeType::Identifier, "Identifier"},
@@ -85,7 +86,12 @@ namespace mead {
 	}
 
 	std::ostream & ASTNode::debug(std::ostream &stream, size_t padding) const {
-		std::println(stream, "{}{}: {}", std::string(padding, ' '), nodeTypes.at(type), token);
+		std::string node_name;
+		if (auto iter = nodeTypes.find(type); iter != nodeTypes.end())
+			node_name = iter->second;
+		else
+			node_name = std::format("\x1b[31m[NodeType={}?]\x1b[39m", static_cast<int>(type));
+		std::println(stream, "{}{}: {}", std::string(padding, ' '), node_name, token);
 		for (const auto &child: children) {
 			child->debug(stream, padding + 2);
 		}

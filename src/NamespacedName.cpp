@@ -3,6 +3,12 @@
 namespace mead {
 	NamespacedName::NamespacedName() = default;
 
+	NamespacedName::NamespacedName(const char *name):
+		name(std::move(name)) {}
+
+	NamespacedName::NamespacedName(std::string name):
+		name(std::move(name)) {}
+
 	NamespacedName::NamespacedName(std::vector<std::string> namespaces, std::string name):
 		namespaces(std::move(namespaces)), name(std::move(name)) {}
 

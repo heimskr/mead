@@ -11,6 +11,8 @@ namespace mead {
 			std::string name;
 
 			NamespacedName();
+			NamespacedName(const char *name);
+			NamespacedName(std::string name);
 			NamespacedName(std::vector<std::string> namespaces, std::string name);
 			NamespacedName(std::span<const std::string> namespaces, std::string name);
 

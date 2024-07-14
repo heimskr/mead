@@ -447,9 +447,11 @@ namespace mead {
 				name.emplace(std::vector<std::string>{}, node->token.value);
 			}
 
-			TypePtr type = Type::make(std::move(name.value()));
+			// TypePtr type = Type::make(std::move(name.value()));
 			// typeDB.insert(type);
-			*type_out = QualifiedType(std::move(pointer_consts), is_const, is_reference, std::move(type));
+			// *type_out = QualifiedType(std::move(pointer_consts), is_const, is_reference, std::move(type));
+
+			*type_out = QualifiedType(std::move(pointer_consts), is_const, is_reference, nullptr);
 		}
 
 		for (const ASTNodePtr &piece : pieces) {

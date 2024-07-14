@@ -1,3 +1,4 @@
+#include "mead/Compiler.h"
 #include "mead/Lexer.h"
 #include "mead/Parser.h"
 
@@ -88,6 +89,21 @@ int main(int, char **) {
 		}
 	)";
 
+	example = R"(
+		fn compute() -> i32 {
+			x: i32 = 1;
+			x * 2 + 40;
+		}
+
+		global: i32 = compute();
+		x: i32 = global;
+		y: i32* = x.&;
+
+		fn main() -> i32 {
+			return y.*;
+		}
+	)";
+
 	Lexer lexer;
 
 	if (!lexer.lex(example)) {
@@ -104,10 +120,21 @@ int main(int, char **) {
 	if (std::optional<Token> failure = parser.parse(lexer.tokens)) {
 		std::println("Parsing failed at {}", *failure);
 		parser.print();
+		return  1;
 	} else {
 		std::println("Parsed successfully.");
-		for (const auto &node : parser.getNodes()) {
-			node->debug();
-		}
+		// for (const auto &node : parser.getNodes()) {
+		// 	node->debug();
+		// }
+	}
+
+	Compiler compiler;
+
+	if (CompilerResult result = compiler.compile(parser.getNodes())) {
+		std::println(std::cerr, "Success.");
+		std::println("{}", result.value());
+	} else{
+		std::println(std::cerr, "Error: {}", result.error().first);
+		return 1;
 	}
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "mead/Formattable.h"
 #include "mead/LLVMType.h"
 
 #include <concepts>
@@ -8,7 +9,7 @@
 #include <string>
 
 namespace mead {
-	class LLVMValue {
+	class LLVMValue: public Formattable {
 		protected:
 			LLVMValue() = default;
 
@@ -18,8 +19,6 @@ namespace mead {
 			virtual LLVMTypePtr getType() const = 0;
 			/** Includes preceding type. */
 			virtual operator std::string() const;
-			/** Includes preceding type. */
-			virtual std::format_context::iterator formatTo(std::format_context &) const = 0;
 	};
 
 	using LLVMValuePtr = std::shared_ptr<LLVMValue>;
@@ -84,30 +83,3 @@ namespace mead {
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
 }
-
-template <>
-struct std::formatter<mead::LLVMValue> {
-	formatter() = default;
-
-	constexpr auto parse(std::format_parse_context &ctx) {
-		return ctx.begin();
-	}
-
-	auto format(const auto &value, std::format_context &ctx) const {
-		return value.formatTo(ctx);
-	}
-};
-
-template <>
-struct std::formatter<mead::LLVMValuePtr> {
-	formatter() = default;
-
-	constexpr auto parse(std::format_parse_context &ctx) {
-		return ctx.begin();
-	}
-
-	auto format(const auto &ptr, std::format_context &ctx) const {
-		assert(ptr);
-		return ptr->formatTo(ctx);
-	}
-};

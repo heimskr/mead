@@ -10,7 +10,11 @@ namespace mead {
 		private:
 			std::map<NamespacedName, TypePtr> types;
 
+			static std::map<NamespacedName, TypePtr> getDefaultTypes();
+
 		public:
+			TypeDB();
+
 			bool insert(TypePtr);
 			TypePtr operator[](const NamespacedName &);
 			TypePtr at(const NamespacedName &) const;

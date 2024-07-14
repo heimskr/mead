@@ -1,20 +1,43 @@
 #pragma once
 
+#include "mead/Formattable.h"
 #include "mead/NamespacedName.h"
 
 #include <memory>
+#include <string>
 
 namespace mead {
-	class Type {
+	class Type: public Formattable {
+		protected:
+			Type() = default;
+
 		public:
-			NamespacedName name;
+			virtual ~Type() = default;
 
-			Type(NamespacedName name);
+			virtual std::string getName() const = 0;
+			virtual operator std::string() const;
+	};
 
-			template <typename... Args>
-			static std::shared_ptr<Type> make(Args &&...args) {
-				return std::make_shared<Type>(std::forward<Args>(args)...);
-			}
+	class IntType: public Type {
+		private:
+			int bitWidth{};
+			bool isSigned{};
+			char getPrefix() const;
+
+		public:
+			IntType(int bit_width, bool is_signed);
+
+			inline int getBitWidth() const { return bitWidth; }
+			std::string getName() const override;
+			std::format_context::iterator formatTo(std::format_context &) const override;
+	};
+
+	class VoidType: public Type {
+		public:
+			VoidType();
+
+			std::string getName() const override;
+			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
 
 	using TypePtr = std::shared_ptr<Type>;

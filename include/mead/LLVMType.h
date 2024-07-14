@@ -1,5 +1,7 @@
 #pragma once
 
+#include "mead/Formattable.h"
+
 #include <cassert>
 #include <format>
 #include <memory>
@@ -7,7 +9,7 @@
 #include <vector>
 
 namespace mead {
-	class LLVMType {
+	class LLVMType: public Formattable {
 		protected:
 			LLVMType() = default;
 
@@ -16,7 +18,6 @@ namespace mead {
 
 			virtual operator std::string() const;
 			virtual bool operator==(const LLVMType &) const = 0;
-			virtual std::format_context::iterator formatTo(std::format_context &) const = 0;
 	};
 
 	using LLVMTypePtr = std::shared_ptr<LLVMType>;
@@ -59,45 +60,3 @@ namespace mead {
 		std::format_context::iterator formatTo(std::format_context &) const override;
 	};
 }
-
-template <>
-struct std::formatter<mead::LLVMType> {
-	formatter() = default;
-
-	constexpr auto parse(std::format_parse_context &ctx) {
-		return ctx.begin();
-	}
-
-	auto format(const auto &type, std::format_context &ctx) const {
-		return type.formatTo(ctx);
-	}
-};
-
-template <>
-struct std::formatter<mead::LLVMTypePtr> {
-	formatter() = default;
-
-	constexpr auto parse(std::format_parse_context &ctx) {
-		return ctx.begin();
-	}
-
-	auto format(const auto &ptr, std::format_context &ctx) const {
-		assert(ptr);
-		return std::format_to(ctx.out(), "{}", *ptr);
-	}
-};
-
-template <>
-struct std::formatter<mead::LLVMTypeWeakPtr> {
-	formatter() = default;
-
-	constexpr auto parse(std::format_parse_context &ctx) {
-		return ctx.begin();
-	}
-
-	auto format(const auto &weak, std::format_context &ctx) const {
-		if (auto ptr = weak.lock())
-			return std::format_to(ctx.out(), "{}", ptr);
-		return std::format_to(ctx.out(), "(expired)");
-	}
-};
