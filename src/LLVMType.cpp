@@ -91,4 +91,14 @@ namespace mead {
 	std::format_context::iterator LLVMPointerType::formatTo(std::format_context &ctx) const {
 		return std::format_to(ctx.out(), "ptr");
 	}
+
+	LLVMVoidType::LLVMVoidType() = default;
+
+	bool LLVMVoidType::operator==(const LLVMType &other) const {
+		return this == &other || dynamic_cast<const LLVMVoidType *>(&other);
+	}
+
+	std::format_context::iterator LLVMVoidType::formatTo(std::format_context &ctx) const {
+		return std::format_to(ctx.out(), "void");
+	}
 }

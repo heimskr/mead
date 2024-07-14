@@ -16,6 +16,10 @@ namespace mead {
 		return getPrefix() + std::to_string(bitWidth);
 	}
 
+	LLVMTypePtr IntType::toLLVM() const {
+		return std::make_shared<LLVMIntType>(bitWidth);
+	}
+
 	std::format_context::iterator IntType::formatTo(std::format_context &ctx) const {
 		return std::format_to(ctx.out(), "{}{}", getPrefix(), bitWidth);
 	}
@@ -24,6 +28,10 @@ namespace mead {
 
 	std::string VoidType::getName() const {
 		return "void";
+	}
+
+	LLVMTypePtr VoidType::toLLVM() const {
+		return std::make_shared<LLVMVoidType>();
 	}
 
 	std::format_context::iterator VoidType::formatTo(std::format_context &ctx) const {

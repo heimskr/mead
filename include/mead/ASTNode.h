@@ -54,6 +54,26 @@ namespace mead {
 			const SourceLocation & location() const {
 				return token.location;
 			}
+
+			inline const auto & operator[](size_t index) const {
+				return children[index];
+			}
+
+			inline const auto & at(size_t index) const {
+				return children.at(index);
+			}
+
+			inline const auto & front() const {
+				if (children.empty())
+					throw std::out_of_range("ASTNode has no children");
+				return children.front();
+			}
+
+			inline const auto & back() const {
+				if (children.empty())
+					throw std::out_of_range("ASTNode has no children");
+				return children.back();
+			}
 	};
 
 	using ASTNodePtr = std::shared_ptr<ASTNode>;

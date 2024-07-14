@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mead/Formattable.h"
+#include "mead/LLVMType.h"
 #include "mead/NamespacedName.h"
 
 #include <memory>
@@ -16,6 +17,7 @@ namespace mead {
 
 			virtual std::string getName() const = 0;
 			virtual operator std::string() const;
+			virtual LLVMTypePtr toLLVM() const = 0;
 	};
 
 	class IntType: public Type {
@@ -29,6 +31,7 @@ namespace mead {
 
 			inline int getBitWidth() const { return bitWidth; }
 			std::string getName() const override;
+			LLVMTypePtr toLLVM() const override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
 
@@ -37,6 +40,7 @@ namespace mead {
 			VoidType();
 
 			std::string getName() const override;
+			LLVMTypePtr toLLVM() const override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
 

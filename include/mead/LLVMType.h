@@ -59,4 +59,11 @@ namespace mead {
 		bool operator==(const LLVMType &) const override;
 		std::format_context::iterator formatTo(std::format_context &) const override;
 	};
+
+	struct LLVMVoidType: LLVMType {
+		LLVMVoidType();
+
+		bool operator==(const LLVMType &) const override;
+		std::format_context::iterator formatTo(std::format_context &) const override;
+	};
 }
