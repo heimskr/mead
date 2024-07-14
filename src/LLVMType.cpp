@@ -4,12 +4,12 @@
 #include <format>
 
 namespace mead {
+	LLVMType::operator std::string() const {
+		return std::format("{}", *this);
+	}
+
 	LLVMIntType::LLVMIntType(int bit_width):
 		bitWidth(bit_width) {}
-
-	LLVMIntType::operator std::string() const {
-		return std::format("i{}", bitWidth);
-	}
 
 	bool LLVMIntType::operator==(const LLVMType &other) const {
 		if (this == &other)
@@ -21,12 +21,12 @@ namespace mead {
 		return false;
 	}
 
+	std::format_context::iterator LLVMIntType::formatTo(std::format_context &ctx) const {
+		return std::format_to(ctx.out(), "i{}", bitWidth);
+	}
+
 	LLVMArrayType::LLVMArrayType(int count, LLVMTypePtr subtype):
 		count(count), subtype(std::move(subtype)) {}
-
-	LLVMArrayType::operator std::string() const {
-		return std::format("{} x {}", count, subtype);
-	}
 
 	bool LLVMArrayType::operator==(const LLVMType &other) const {
 		if (this == &other)
@@ -38,12 +38,12 @@ namespace mead {
 		return false;
 	}
 
+	std::format_context::iterator LLVMArrayType::formatTo(std::format_context &ctx) const {
+		return std::format_to(ctx.out(), "[{} x {}]", count, subtype);
+	}
+
 	LLVMStructType::LLVMStructType(std::vector<LLVMTypeWeakPtr> subtypes):
 		subtypes(std::move(subtypes)) {}
-
-	LLVMStructType::operator std::string() const {
-		return std::format("{{{}}}", join(subtypes));
-	}
 
 	bool LLVMStructType::operator==(const LLVMType &other) const {
 		if (this == &other)
@@ -68,20 +68,27 @@ namespace mead {
 		return false;
 	}
 
+	std::format_context::iterator LLVMStructType::formatTo(std::format_context &ctx) const {
+		return std::format_to(ctx.out(), "{{{}}}", join(subtypes));
+	}
+
 	LLVMPointerType::LLVMPointerType(LLVMTypePtr subtype):
 		subtype(std::move(subtype)) {}
-
-	LLVMPointerType::operator std::string() const {
-		return "ptr";
-	}
 
 	bool LLVMPointerType::operator==(const LLVMType &other) const {
 		if (this == &other)
 			return true;
 
-		if (auto *cast = dynamic_cast<const LLVMPointerType *>(&other))
-			return *cast->subtype == *subtype;
+		if (auto *cast = dynamic_cast<const LLVMPointerType *>(&other)) {
+			if (cast->subtype && subtype)
+				return *cast->subtype == *subtype;
+			return !cast->subtype == !subtype;
+		}
 
 		return false;
+	}
+
+	std::format_context::iterator LLVMPointerType::formatTo(std::format_context &ctx) const {
+		return std::format_to(ctx.out(), "ptr");
 	}
 }

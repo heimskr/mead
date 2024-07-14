@@ -14,8 +14,9 @@ namespace mead {
 		public:
 			virtual ~LLVMType() = default;
 
-			virtual operator std::string() const = 0;
+			virtual operator std::string() const;
 			virtual bool operator==(const LLVMType &) const = 0;
+			virtual std::format_context::iterator formatTo(std::format_context &) const = 0;
 	};
 
 	using LLVMTypePtr = std::shared_ptr<LLVMType>;
@@ -26,8 +27,8 @@ namespace mead {
 
 		explicit LLVMIntType(int bit_width);
 
-		operator std::string() const override;
 		bool operator==(const LLVMType &) const override;
+		std::format_context::iterator formatTo(std::format_context &) const override;
 	};
 
 	struct LLVMArrayType: LLVMType {
@@ -36,17 +37,17 @@ namespace mead {
 
 		LLVMArrayType(int count, LLVMTypePtr subtype);
 
-		operator std::string() const override;
 		bool operator==(const LLVMType &) const override;
+		std::format_context::iterator formatTo(std::format_context &) const override;
 	};
 
 	struct LLVMStructType: LLVMType {
-		std::vector<std::weak_ptr<LLVMType>> subtypes;
+		std::vector<LLVMTypeWeakPtr> subtypes;
 
-		explicit LLVMStructType(std::vector<std::weak_ptr<LLVMType>> subtypes);
+		explicit LLVMStructType(std::vector<LLVMTypeWeakPtr> subtypes);
 
-		operator std::string() const override;
 		bool operator==(const LLVMType &) const override;
+		std::format_context::iterator formatTo(std::format_context &) const override;
 	};
 
 	struct LLVMPointerType: LLVMType {
@@ -54,8 +55,8 @@ namespace mead {
 
 		LLVMPointerType(LLVMTypePtr subtype);
 
-		operator std::string() const override;
 		bool operator==(const LLVMType &) const override;
+		std::format_context::iterator formatTo(std::format_context &) const override;
 	};
 }
 
@@ -68,7 +69,7 @@ struct std::formatter<mead::LLVMType> {
 	}
 
 	auto format(const auto &type, std::format_context &ctx) const {
-		return std::format_to(ctx.out(), "{}", std::string(type));
+		return type.formatTo(ctx);
 	}
 };
 
