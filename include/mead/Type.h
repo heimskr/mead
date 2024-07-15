@@ -2,15 +2,17 @@
 
 #include "mead/Formattable.h"
 #include "mead/LLVMType.h"
-#include "mead/NamespacedName.h"
+#include "mead/Symbol.h"
 
 #include <memory>
 #include <string>
 
 namespace mead {
-	class Type: public Formattable {
+	class Namespace;
+
+	class Type: public Symbol, public Formattable {
 		protected:
-			Type() = default;
+			using Symbol::Symbol;
 
 		public:
 			virtual ~Type() = default;
@@ -19,6 +21,8 @@ namespace mead {
 			virtual operator std::string() const;
 			virtual LLVMTypePtr toLLVM() const = 0;
 	};
+
+	using TypePtr = std::shared_ptr<Type>;
 
 	class IntType: public Type {
 		private:
@@ -44,5 +48,16 @@ namespace mead {
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
 
-	using TypePtr = std::shared_ptr<Type>;
+	class ClassType: public Type {
+		private:
+			std::weak_ptr<Namespace> owner;
+
+		public:
+			ClassType(std::string name, std::weak_ptr<Namespace> owner);
+
+			Namespace & getNamespace() const;
+			std::string getName() const override;
+			LLVMTypePtr toLLVM() const override;
+			std::format_context::iterator formatTo(std::format_context &) const override;
+	};
 }

@@ -4,6 +4,7 @@
 
 namespace mead {
 	class Scope {
-
+		public:
+			Scope();
 	};
 }

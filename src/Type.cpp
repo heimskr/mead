@@ -1,4 +1,7 @@
+#include "mead/Namespace.h"
 #include "mead/Type.h"
+
+#include <cassert>
 
 namespace mead {
 	Type::operator std::string() const {
@@ -10,7 +13,7 @@ namespace mead {
 	}
 
 	IntType::IntType(int bit_width, bool is_signed):
-		bitWidth(bit_width), isSigned(is_signed) {}
+		Type(getPrefix() + std::to_string(bit_width)), bitWidth(bit_width), isSigned(is_signed) {}
 
 	std::string IntType::getName() const {
 		return getPrefix() + std::to_string(bitWidth);
@@ -24,7 +27,8 @@ namespace mead {
 		return std::format_to(ctx.out(), "{}{}", getPrefix(), bitWidth);
 	}
 
-	VoidType::VoidType() = default;
+	VoidType::VoidType():
+		Type("void") {}
 
 	std::string VoidType::getName() const {
 		return "void";
@@ -36,5 +40,27 @@ namespace mead {
 
 	std::format_context::iterator VoidType::formatTo(std::format_context &ctx) const {
 		return std::format_to(ctx.out(), "void");
+	}
+
+	ClassType::ClassType(std::string name, std::weak_ptr<Namespace> owner):
+		Type(std::move(name)), owner(std::move(owner)) {}
+
+	Namespace & ClassType::getNamespace() const {
+		auto locked = owner.lock();
+		assert(locked);
+		return *locked;
+	}
+
+	std::string ClassType::getName() const {
+		return getNamespace().getFullName() + "::" + name;
+	}
+
+	LLVMTypePtr ClassType::toLLVM() const {
+		assert(false);
+		return {};
+	}
+
+	std::format_context::iterator ClassType::formatTo(std::format_context &ctx) const {
+		return std::format_to(ctx.out(), "class {}", getName());
 	}
 }
