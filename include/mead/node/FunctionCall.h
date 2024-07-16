@@ -1,6 +1,6 @@
 #pragma once
 
-#include "mead/expr/Expression.h"
+#include "mead/node/Expression.h"
 
 namespace mead {
 	class FunctionCall: public Expression {

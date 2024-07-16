@@ -48,6 +48,18 @@ namespace mead {
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
 
+	class PointerType: public Type {
+		private:
+			TypePtr subtype;
+
+		public:
+			PointerType(TypePtr subtype);
+
+			std::string getName() const override;
+			LLVMTypePtr toLLVM() const override;
+			std::format_context::iterator formatTo(std::format_context &) const override;
+	};
+
 	class ClassType: public Type {
 		private:
 			std::weak_ptr<Namespace> owner;

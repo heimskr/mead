@@ -42,6 +42,21 @@ namespace mead {
 		return std::format_to(ctx.out(), "void");
 	}
 
+	PointerType::PointerType(TypePtr subtype):
+		Type(subtype->getName() + '*'), subtype(std::move(subtype)) {}
+
+	std::string PointerType::getName() const {
+		return subtype->getName() + '*';
+	}
+
+	LLVMTypePtr PointerType::toLLVM() const {
+		return std::make_shared<LLVMPointerType>(subtype->toLLVM());
+	}
+
+	std::format_context::iterator PointerType::formatTo(std::format_context &ctx) const {
+		return std::format_to(ctx.out(), "{}*", subtype);
+	}
+
 	ClassType::ClassType(std::string name, std::weak_ptr<Namespace> owner):
 		Type(std::move(name)), owner(std::move(owner)) {}
 

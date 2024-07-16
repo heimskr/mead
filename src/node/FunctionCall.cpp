@@ -1,4 +1,4 @@
-#include "mead/expr/FunctionCall.h"
+#include "mead/node/FunctionCall.h"
 
 #include <cassert>
 
@@ -15,7 +15,12 @@ namespace mead {
 	}
 
 	std::shared_ptr<Type> FunctionCall::getType(const Scope &) const {
-		assert(false);
+		ASTNodePtr function = getFunction();
+
+		if (function->type == NodeType::Identifier) {
+
+		}
+
 		return {};
 	}
 }

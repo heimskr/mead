@@ -34,7 +34,8 @@ struct std::formatter<std::shared_ptr<T>> {
 	}
 
 	auto format(const auto &ptr, std::format_context &ctx) const {
-		assert(ptr);
+		if (!ptr)
+			return std::format_to(ctx.out(), "(null)");
 		return std::format_to(ctx.out(), "{}", *ptr);
 	}
 };

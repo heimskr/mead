@@ -33,6 +33,8 @@ namespace mead {
 			ASTNode();
 			ASTNode(NodeType type, Token token, std::weak_ptr<ASTNode> parent = {});
 
+			virtual ~ASTNode() = default;
+
 			std::shared_ptr<ASTNode> reparent(std::weak_ptr<ASTNode>);
 			std::ostream & debug(std::ostream & = std::cout, size_t padding = 0) const;
 

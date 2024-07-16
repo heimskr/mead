@@ -2,6 +2,12 @@
 #include "mead/QualifiedType.h"
 #include "mead/Util.h"
 
+#include "mead/node/Expression.h"
+#include "mead/node/FunctionCall.h"
+#include "mead/node/GetAddress.h"
+#include "mead/node/Identifier.h"
+#include "mead/node/TypeNode.h"
+
 #include <array>
 #include <cassert>
 #include <expected>
@@ -142,7 +148,8 @@ namespace mead {
 				return log.fail("No return type", tokens, return_type);
 			}
 		} else {
-			node->add(NodeType::Type, Token(TokenType::Void, "void", {}));
+			auto type_node = std::make_shared<TypeNode>(Token(TokenType::Void, "void", {}));
+			type_node->reparent(node);
 		}
 
 		for (const ASTNodePtr &variable : variables) {
@@ -202,7 +209,7 @@ namespace mead {
 		auto log = logger("takeIdentifier");
 
 		if (const Token *identifier = take(tokens, TokenType::Identifier)) {
-			return log.success(ASTNode::make(NodeType::Identifier, *identifier));
+			return log.success(std::make_shared<Identifier>(*identifier));
 		}
 
 		return log.fail("No identifier", tokens);
@@ -376,9 +383,9 @@ namespace mead {
 		ASTNodePtr node;
 
 		if (const Token *int_type = take(tokens, TokenType::IntegerType)) {
-			node = ASTNode::make(NodeType::Type, *int_type);
+			node = std::make_shared<TypeNode>(*int_type);
 		} else if (const Token *void_type = take(tokens, TokenType::Void)) {
-			node = ASTNode::make(NodeType::Type, *void_type);
+			node = std::make_shared<TypeNode>(*void_type);
 		} else {
 			do {
 				if (ParseResult piece = takeIdentifier(tokens)) {
@@ -397,7 +404,7 @@ namespace mead {
 			}
 
 			name.emplace(std::move(namespaces), pieces.back()->token.value);
-			node = ASTNode::make(NodeType::Type, saver->at((pieces.size() - 1) * 2));
+			node = std::make_shared<TypeNode>(saver->at((pieces.size() - 1) * 2));
 
 			if (pieces.size() == 1) {
 				if (!typeDB.contains(name.value())) {
@@ -684,7 +691,7 @@ namespace mead {
 		if (const Token *opening = take(tokens, OpeningParen)) {
 			if (ParseResult args = takeExpressionList(tokens)) {
 				if (take(tokens, ClosingParen)) {
-					ASTNodePtr node = ASTNode::make(NodeType::FunctionCall, *opening);
+					ASTNodePtr node = std::make_shared<FunctionCall>(*opening);
 					lhs->reparent(node);
 					(*args)->reparent(node);
 					return log.success(takePrime2(tokens, node), saver);
@@ -724,7 +731,7 @@ namespace mead {
 			}
 
 			if (const Token *ampersand = take(tokens, Ampersand)) {
-				ASTNodePtr node = ASTNode::make(NodeType::GetAddress, *ampersand);
+				ASTNodePtr node = std::make_shared<GetAddress>(*ampersand);
 				lhs->reparent(node);
 				return log.success(takePrime2(tokens, node), saver);
 			}

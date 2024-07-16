@@ -97,7 +97,7 @@ int main(int, char **) {
 		}
 
 		global: i32 = compute();
-		x: i32 = global;
+		x: i32& = global;
 		y: i32* = x.&;
 		z: i32;
 
