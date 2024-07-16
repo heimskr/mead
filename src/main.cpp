@@ -96,10 +96,12 @@ int main(int, char **) {
 			x * 2 + 40;
 		}
 
-		global: i32 = compute();
-		x: i32& = global;
-		y: i32* = x.&;
-		z: i32;
+		fn ext(arg1: i32,  arg2: u8*const&) -> i32;
+
+		global: i32 const = compute();
+		x: i32 const& = global;
+		y: i32 const* = x.&;
+		z: i32 = y.*;
 
 		fn main() -> i32 {
 			return y.*;

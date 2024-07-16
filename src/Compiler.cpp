@@ -2,6 +2,7 @@
 #include "mead/node/Expression.h"
 #include "mead/node/Identifier.h"
 #include "mead/node/TypeNode.h"
+#include "mead/Function.h"
 #include "mead/Logging.h"
 #include "mead/Namespace.h"
 #include "mead/Scope.h"
@@ -25,8 +26,13 @@ namespace mead {
 				case NodeType::VariableDefinition:
 					result = compileGlobalVariable(node);
 					break;
+				case NodeType::FunctionDeclaration:
+				case NodeType::FunctionDefinition:
+					result = compileFunction(node);
+					break;
 				default:
 					// throw std::runtime_error("Unhandled node: " + std::string(nodeTypes.at(node->type)));
+					// node->debug();
 					;
 			}
 
@@ -40,13 +46,14 @@ namespace mead {
 	}
 
 	CompilerResult Compiler::compileGlobalVariable(const ASTNodePtr &node) {
+		// node->debug(INFO("Global variable:\n"), 6) << '\n';
+
 		const bool is_declaration = node->type == NodeType::VariableDeclaration;
 		const bool is_definition = node->type == NodeType::VariableDefinition;
 
 		assert(is_declaration || is_definition);
 
 		ASTNodePtr declaration_node = is_declaration? node : node->front();
-		node->debug(INFO("Global variable:\n"), 6) << '\n';
 		auto declaration_id = std::dynamic_pointer_cast<Identifier>(declaration_node->front());
 		assert(declaration_id);
 
@@ -55,7 +62,7 @@ namespace mead {
 		auto ns = program->getGlobalNamespace();
 
 		if (is_definition) {
-			INFO("Expr type: {}\n", getType(*scope, node->at(1)));
+			// INFO("Expr type: {}\n", getType(*scope, node->at(1)));
 		}
 
 		const std::string &identifier = declaration_id->getIdentifier();
@@ -67,11 +74,37 @@ namespace mead {
 		bool inserted = scope->insertVariable(identifier, new_variable);
 		assert(inserted);
 
-		for (const auto &[name, var] : scope->getVariables()) {
-			INFO("[name={}, var={}]", name, var);
+		return std::format("[\x1b[2mglobal.\x1b[22m {}]", new_variable);
+	}
+
+	CompilerResult Compiler::compileFunction(const ASTNodePtr &node) {
+		// node->debug(INFO("Function:\n"), 6) << '\n';
+
+		ASTNodePtr prototype = node->front();
+
+		auto identifier = std::dynamic_pointer_cast<Identifier>(prototype->front());
+		assert(identifier);
+
+		auto return_type_node = std::dynamic_pointer_cast<TypeNode>(prototype->at(1));
+		assert(return_type_node);
+
+		NamespacePtr ns = program->getGlobalNamespace();
+		TypePtr return_type = return_type_node->getType(ns);
+		std::vector<TypePtr> argument_types;
+
+
+		for (size_t i = 2; i < prototype->size(); ++i) {
+			auto argument_type_node = std::dynamic_pointer_cast<TypeNode>(prototype->at(i)->at(1));
+			assert(argument_type_node);
+			argument_types.push_back(argument_type_node->getType(ns));
 		}
 
-		return std::format("[\x1b[2mglobal var.\x1b[22m {}]", new_variable);
+		std::string name = identifier->getIdentifier();
+		auto function = std::make_shared<Function>(name, std::move(return_type), std::move(argument_types));
+		bool inserted = ns->insertFunction(name, function);
+		assert(inserted);
+
+		return std::format("[\x1b[2mfunction.\x1b[22m {}]", function);
 	}
 
 	TypePtr Compiler::getType(Scope &scope, const ASTNodePtr &node) {

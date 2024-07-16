@@ -29,4 +29,6 @@ namespace mead {
 			bool insertType(const std::string &name, const std::shared_ptr<Type> &);
 			bool insertFunction(const std::string &name, const std::shared_ptr<Function> &);
 	};
+
+	using NamespacePtr = std::shared_ptr<Namespace>;
 }

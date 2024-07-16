@@ -1,5 +1,6 @@
 #pragma once
 
+#include "mead/Formattable.h"
 #include "mead/Symbol.h"
 
 #include <memory>
@@ -9,7 +10,7 @@
 namespace mead {
 	class Type;
 
-	class Function: public Symbol {
+	class Function: public Symbol, public Formattable {
 		private:
 			std::shared_ptr<Type> returnType;
 			std::vector<std::shared_ptr<Type>> argumentTypes;
@@ -19,5 +20,9 @@ namespace mead {
 
 			inline const auto & getReturnType() const { return returnType; }
 			inline const auto & getArgumentTypes() const { return argumentTypes; }
+
+			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
+
+	using FunctionPtr = std::shared_ptr<Function>;
 }

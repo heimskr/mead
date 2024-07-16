@@ -17,7 +17,7 @@ namespace mead {
 		{NodeType::Block, "Block"},
 		{NodeType::Const, "Const"},
 		{NodeType::Pointer, "Pointer"},
-		{NodeType::Reference, "Reference"},
+		{NodeType::LReference, "LReference"},
 		{NodeType::PrefixIncrement, "PrefixIncrement"},
 		{NodeType::PrefixDecrement, "PrefixDecrement"},
 		{NodeType::PostfixIncrement, "PostfixIncrement"},

@@ -177,8 +177,7 @@ namespace mead {
 		ASTNodePtr node = ASTNode::make(NodeType::FunctionDeclaration, (*prototype)->token);
 		(*prototype)->reparent(node);
 
-		saver.cancel();
-		return prototype;
+		return log.success(node, saver);
 	}
 
 	ParseResult Parser::takeFunctionDefinition(std::span<const Token> &tokens) {
@@ -426,7 +425,7 @@ namespace mead {
 						node->add(NodeType::Pointer, *star);
 						pointer_consts.push_back(true);
 					} else if (const Token *ampersand = take(tokens, TokenType::Ampersand)) {
-						node->add(NodeType::Reference, *ampersand);
+						node->add(NodeType::LReference, *ampersand);
 						is_const = true;
 						is_reference = true;
 						ref_found = true;
@@ -439,7 +438,7 @@ namespace mead {
 						return log.fail("Ref already found", tokens);
 					}
 
-					node->add(NodeType::Reference, *ampersand);
+					node->add(NodeType::LReference, *ampersand);
 					is_const = false;
 					is_reference = true;
 					ref_found = true;

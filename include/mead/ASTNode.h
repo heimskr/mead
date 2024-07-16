@@ -14,7 +14,7 @@ namespace mead {
 	enum class NodeType {
 		Invalid,
 		FunctionPrototype, FunctionDeclaration, FunctionDefinition, VariableDeclaration, VariableDefinition, Identifier, Type, Block,
-		Const, Pointer, Reference, Number, String,
+		Const, Pointer, LReference, Number, String,
 		PrefixIncrement, PrefixDecrement, PostfixIncrement, PostfixDecrement,
 		ConstructorCall, FunctionCall, UnaryExpression, Cast, Sizeof, Binary, SingleNew, ArrayNew, Delete,
 		EmptyPrime, EmptyStatement, Scope, Expressions, Subscript, AccessMember, Deref, GetAddress, UnaryPlus, UnaryMinus, LogicalNot, BitwiseNot,
@@ -55,6 +55,14 @@ namespace mead {
 				return token.location;
 			}
 
+			inline size_t size() const {
+				return children.size();
+			}
+
+			inline bool empty() const {
+				return children.empty();
+			}
+
 			inline const auto & operator[](size_t index) const {
 				return children[index];
 			}
@@ -78,6 +86,22 @@ namespace mead {
 
 	using ASTNodePtr = std::shared_ptr<ASTNode>;
 }
+
+template <>
+struct std::formatter<mead::NodeType> {
+	formatter() = default;
+
+	constexpr auto parse(std::format_parse_context &ctx) {
+		return ctx.begin();
+	}
+
+	auto format(const auto &type, std::format_context &ctx) const {
+		if (auto iter = mead::nodeTypes.find(type); iter != mead::nodeTypes.end())
+			return std::format_to(ctx.out(), "{}", iter->second);
+
+		return std::format_to(ctx.out(), "<NodeType:{}?>", static_cast<int>(type));
+	}
+};
 
 template <>
 struct std::formatter<mead::ASTNode> {

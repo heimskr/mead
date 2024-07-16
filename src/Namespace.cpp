@@ -30,7 +30,6 @@ namespace mead {
 	}
 
 	std::shared_ptr<Type> Namespace::getType(const std::string &name) const {
-		INFO("Getting type {}", name);
 		if (auto iter = types.find(name); iter != types.end())
 			return iter->second;
 		if (auto parent = weakParent.lock())
