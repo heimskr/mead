@@ -24,6 +24,10 @@ namespace mead {
 		isConst = value;
 	}
 
+	TypePtr Type::unwrapLReference() {
+		return shared_from_this();
+	}
+
 	char IntType::getPrefix() const {
 		return isSigned? 'i' : 'u';
 	}
@@ -87,8 +91,8 @@ namespace mead {
 		return std::format_to(ctx.out(), "void");
 	}
 
-	PointerType::PointerType(TypePtr subtype, bool is_const):
-		Type(getNameImpl(), is_const), subtype(std::move(subtype)) {}
+	PointerType::PointerType(const TypePtr &subtype, bool is_const):
+		Type(getNameImpl(), is_const), subtype(subtype->unwrapLReference()) {}
 
 	std::string PointerType::getNameImpl() const {
 		return std::format("{}*{}", subtype, getConstSuffix());
@@ -124,8 +128,8 @@ namespace mead {
 		return std::format_to(ctx.out(), "{}*{}", subtype, getConstSuffix());
 	}
 
-	LReferenceType::LReferenceType(TypePtr subtype, bool is_const):
-		Type(getNameImpl(), is_const), subtype(std::move(subtype)) {}
+	LReferenceType::LReferenceType(const TypePtr &subtype, bool is_const):
+		Type(getNameImpl(), is_const), subtype(subtype->unwrapLReference()) {}
 
 	std::string LReferenceType::getNameImpl() const {
 		return std::format("{}&{}", subtype, getConstSuffix());
@@ -159,8 +163,18 @@ namespace mead {
 		return std::make_shared<LLVMPointerType>(subtype->toLLVM());
 	}
 
+	TypePtr LReferenceType::unwrapLReference() {
+		return subtype;
+	}
+
 	std::format_context::iterator LReferenceType::formatTo(std::format_context &ctx) const {
 		return std::format_to(ctx.out(), "{}&{}", subtype, getConstSuffix());
+	}
+
+	std::shared_ptr<LReferenceType> LReferenceType::wrap(const TypePtr &type) {
+		if (auto cast = std::dynamic_pointer_cast<LReferenceType>(type))
+			return cast;
+		return std::make_shared<LReferenceType>(type);
 	}
 
 	ClassType::ClassType(std::string name, std::weak_ptr<Namespace> owner, bool is_const):

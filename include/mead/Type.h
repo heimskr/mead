@@ -26,6 +26,7 @@ namespace mead {
 			virtual bool getConst() const;
 			virtual void setConst(bool);
 			virtual bool isExactlyEquivalent(const Type &) const = 0;
+			virtual std::shared_ptr<Type> unwrapLReference();
 	};
 
 	using TypePtr = std::shared_ptr<Type>;
@@ -65,7 +66,7 @@ namespace mead {
 			std::string getNameImpl() const;
 
 		public:
-			explicit PointerType(TypePtr subtype, bool is_const = false);
+			explicit PointerType(const TypePtr &subtype, bool is_const = false);
 
 			std::string getName() const override;
 			TypePtr copy() const override;
@@ -80,13 +81,16 @@ namespace mead {
 			std::string getNameImpl() const;
 
 		public:
-			explicit LReferenceType(TypePtr subtype, bool is_const = false);
+			explicit LReferenceType(const TypePtr &subtype, bool is_const = false);
 
 			std::string getName() const override;
 			TypePtr copy() const override;
 			bool isExactlyEquivalent(const Type &) const override;
 			LLVMTypePtr toLLVM() const override;
+			TypePtr unwrapLReference() override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
+
+			static std::shared_ptr<LReferenceType> wrap(const TypePtr &);
 	};
 
 	class ClassType: public Type {

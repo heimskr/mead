@@ -36,7 +36,8 @@ namespace mead {
 			virtual ~ASTNode() = default;
 
 			std::shared_ptr<ASTNode> reparent(std::weak_ptr<ASTNode>);
-			std::ostream & debug(std::ostream & = std::cout, size_t padding = 0) const;
+			virtual std::ostream & debug(std::ostream & = std::cout, size_t padding = 0) const;
+			std::string debugStr() const;
 
 			template <typename... Args>
 			std::shared_ptr<ASTNode> add(Args &&...args) {

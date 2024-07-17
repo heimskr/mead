@@ -12,5 +12,7 @@ namespace mead {
 
 		public:
 			virtual std::shared_ptr<Type> getType(const Scope &) const = 0;
+
+			// TODO: getAddress or compileAddress or some better name
 	};
 }

@@ -96,4 +96,10 @@ namespace mead {
 		}
 		return stream;
 	}
+
+	std::string ASTNode::debugStr() const {
+		std::stringstream ss;
+		debug(ss);
+		return ss.str();
+	}
 }
