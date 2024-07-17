@@ -10,7 +10,7 @@
 namespace mead {
 	class Namespace;
 
-	class Type: public Symbol, public Formattable {
+	class Type: public Symbol, public Formattable, public std::enable_shared_from_this<Type> {
 		protected:
 			bool isConst = false;
 			Type(std::string name, bool is_const);
@@ -25,6 +25,7 @@ namespace mead {
 			virtual LLVMTypePtr toLLVM() const = 0;
 			virtual bool getConst() const;
 			virtual void setConst(bool);
+			virtual bool isExactlyEquivalent(const Type &) const = 0;
 	};
 
 	using TypePtr = std::shared_ptr<Type>;
@@ -42,6 +43,7 @@ namespace mead {
 			inline int getBitWidth() const { return bitWidth; }
 			std::string getName() const override;
 			TypePtr copy() const override;
+			bool isExactlyEquivalent(const Type &) const override;
 			LLVMTypePtr toLLVM() const override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
@@ -52,6 +54,7 @@ namespace mead {
 
 			std::string getName() const override;
 			TypePtr copy() const override;
+			bool isExactlyEquivalent(const Type &) const override;
 			LLVMTypePtr toLLVM() const override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
@@ -66,6 +69,7 @@ namespace mead {
 
 			std::string getName() const override;
 			TypePtr copy() const override;
+			bool isExactlyEquivalent(const Type &) const override;
 			LLVMTypePtr toLLVM() const override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
@@ -80,6 +84,7 @@ namespace mead {
 
 			std::string getName() const override;
 			TypePtr copy() const override;
+			bool isExactlyEquivalent(const Type &) const override;
 			LLVMTypePtr toLLVM() const override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
@@ -96,6 +101,7 @@ namespace mead {
 			Namespace & getNamespace() const;
 			std::string getName() const override;
 			TypePtr copy() const override;
+			bool isExactlyEquivalent(const Type &) const override;
 			LLVMTypePtr toLLVM() const override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};

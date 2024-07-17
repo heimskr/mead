@@ -1,7 +1,8 @@
-#include "mead/Compiler.h"
+#include "mead/error/TypeError.h"
 #include "mead/node/Expression.h"
 #include "mead/node/Identifier.h"
 #include "mead/node/TypeNode.h"
+#include "mead/Compiler.h"
 #include "mead/Function.h"
 #include "mead/Logging.h"
 #include "mead/Namespace.h"
@@ -70,7 +71,17 @@ namespace mead {
 		auto type_node = std::dynamic_pointer_cast<TypeNode>(declaration_node->at(1));
 		assert(type_node);
 
-		auto new_variable = std::make_shared<Variable>(identifier, type_node->getType(ns));
+		TypePtr stated_type = type_node->getType(ns);
+
+		if (is_definition) {
+			TypePtr expr_type = getType(*scope, node->at(1));
+			if (expr_type && !expr_type->isExactlyEquivalent(*stated_type)) {
+				// TODO: coercion
+				throw TypeError(std::move(expr_type), std::move(stated_type));
+			}
+		}
+
+		VariablePtr new_variable = std::make_shared<Variable>(identifier, stated_type);
 		bool inserted = scope->insertVariable(identifier, new_variable);
 		assert(inserted);
 

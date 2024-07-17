@@ -43,6 +43,19 @@ namespace mead {
 		return std::make_shared<IntType>(*this);
 	}
 
+	bool IntType::isExactlyEquivalent(const Type &other) const {
+		if (this == &other)
+			return true;
+
+		if (getConst() != other.getConst())
+			return false;
+
+		if (auto *cast = dynamic_cast<const IntType *>(&other))
+			return cast->bitWidth == bitWidth && cast->isSigned == isSigned;
+
+		return false;
+	}
+
 	LLVMTypePtr IntType::toLLVM() const {
 		return std::make_shared<LLVMIntType>(bitWidth);
 	}
@@ -60,6 +73,10 @@ namespace mead {
 
 	TypePtr VoidType::copy() const {
 		return std::make_shared<VoidType>();
+	}
+
+	bool VoidType::isExactlyEquivalent(const Type &other) const {
+		return this == &other || (getConst() == other.getConst() && dynamic_cast<const VoidType *>(&other));
 	}
 
 	LLVMTypePtr VoidType::toLLVM() const {
@@ -86,6 +103,19 @@ namespace mead {
 		return std::make_shared<PointerType>(subtype);
 	}
 
+	bool PointerType::isExactlyEquivalent(const Type &other) const {
+		if (this == &other)
+			return true;
+
+		if (getConst() != other.getConst())
+			return false;
+
+		if (auto *cast = dynamic_cast<const PointerType *>(&other))
+			return subtype->isExactlyEquivalent(*cast->subtype);
+
+		return false;
+	}
+
 	LLVMTypePtr PointerType::toLLVM() const {
 		return std::make_shared<LLVMPointerType>(subtype->toLLVM());
 	}
@@ -108,6 +138,20 @@ namespace mead {
 	TypePtr LReferenceType::copy() const {
 		assert(subtype);
 		return std::make_shared<LReferenceType>(subtype);
+	}
+
+	bool LReferenceType::isExactlyEquivalent(const Type &other) const {
+		if (this == &other)
+			return true;
+
+		// Technically, LReferences are basically const by nature, but still...
+		if (getConst() != other.getConst())
+			return false;
+
+		if (auto *cast = dynamic_cast<const LReferenceType *>(&other))
+			return subtype->isExactlyEquivalent(*cast->subtype);
+
+		return false;
 	}
 
 	LLVMTypePtr LReferenceType::toLLVM() const {
@@ -138,6 +182,19 @@ namespace mead {
 
 	TypePtr ClassType::copy() const {
 		return std::make_shared<ClassType>(*this);
+	}
+
+	bool ClassType::isExactlyEquivalent(const Type &other) const {
+		if (this == &other)
+			return true;
+
+		if (getConst() != other.getConst())
+			return false;
+
+		if (auto *cast = dynamic_cast<const ClassType *>(&other))
+			return cast->name == name && cast->owner.lock() == owner.lock();
+
+		return false;
 	}
 
 	LLVMTypePtr ClassType::toLLVM() const {

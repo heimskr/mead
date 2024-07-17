@@ -13,8 +13,6 @@ namespace mead {
 		if (empty())
 			return type;
 
-		debug();
-
 		for (const ASTNodePtr &child : children) {
 			switch (child->type) {
 				case NodeType::Pointer:
