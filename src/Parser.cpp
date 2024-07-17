@@ -6,6 +6,7 @@
 #include "mead/node/FunctionCall.h"
 #include "mead/node/GetAddress.h"
 #include "mead/node/Identifier.h"
+#include "mead/node/Return.h"
 #include "mead/node/TypeNode.h"
 
 #include <array>
@@ -194,6 +195,18 @@ namespace mead {
 
 		if (!block) {
 			return log.fail("No block", tokens, block);
+		}
+
+		// Implicit return
+		if (ASTNodePtr block_node = *block; !block_node->empty()) {
+			ASTNodePtr back = block_node->back();
+			if (back->type == NodeType::ExpressionStatement) {
+				assert(back->size() == 1);
+				ASTNodePtr wrapped = std::make_shared<Return>(Token{TokenType::Return, "return", {}});
+				back->front()->reparent(wrapped);
+				wrapped->reparent(block_node);
+				back->removeSelf();
+			}
 		}
 
 		ASTNodePtr node = ASTNode::make(NodeType::FunctionDefinition, (*prototype)->token);
@@ -584,7 +597,7 @@ namespace mead {
 			return log.fail("No ';'", tokens);
 		}
 
-		ASTNodePtr node = ASTNode::make(NodeType::ReturnStatement, *return_token);
+		ASTNodePtr node = std::make_shared<Return>(*return_token);
 		(*expr)->reparent(node);
 
 		return log.success(node, saver);

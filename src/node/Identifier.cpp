@@ -12,10 +12,8 @@ namespace mead {
 		Expression(NodeType::Identifier, std::move(token)) {}
 
 	TypePtr Identifier::getType(const Scope &scope) const {
-		if (VariablePtr variable = scope.getVariable(token.value)) {
-			INFO("Found variable for {}", token.value);
+		if (VariablePtr variable = scope.getVariable(token.value))
 			return LReferenceType::wrap(variable->getType());
-		}
 
 		throw ResolutionError(token.value);
 	}

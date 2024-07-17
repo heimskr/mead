@@ -47,10 +47,10 @@ namespace mead {
 	}
 
 	CompilerResult Compiler::compileGlobalVariable(const ASTNodePtr &node) {
-		// node->debug(INFO("Global variable:\n"), 6) << '\n';
-
 		const bool is_declaration = node->type == NodeType::VariableDeclaration;
-		const bool is_definition = node->type == NodeType::VariableDefinition;
+		const bool is_definition  = node->type == NodeType::VariableDefinition;
+
+		// node->debug(INFO("Global variable:\n"), 4) << '\n';
 
 		assert(is_declaration || is_definition);
 
@@ -89,7 +89,12 @@ namespace mead {
 	}
 
 	CompilerResult Compiler::compileFunction(const ASTNodePtr &node) {
-		// node->debug(INFO("Function:\n"), 6) << '\n';
+		const bool is_declaration = node->type == NodeType::FunctionDeclaration;
+		const bool is_definition  = node->type == NodeType::FunctionDefinition;
+
+		node->debug(INFO("Function:\n"), 4) << '\n';
+
+		assert(is_declaration || is_definition);
 
 		ASTNodePtr prototype = node->front();
 
@@ -102,7 +107,6 @@ namespace mead {
 		NamespacePtr ns = program->getGlobalNamespace();
 		TypePtr return_type = return_type_node->getType(ns);
 		std::vector<TypePtr> argument_types;
-
 
 		for (size_t i = 2; i < prototype->size(); ++i) {
 			auto argument_type_node = std::dynamic_pointer_cast<TypeNode>(prototype->at(i)->at(1));

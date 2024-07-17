@@ -66,7 +66,20 @@ namespace mead {
 		}
 
 		// Remove self from parent's children if necessary
-		if (auto parent = weakParent.lock()) {
+		removeSelf();
+
+		weakParent = std::move(new_parent);
+
+		if (ASTNodePtr parent = weakParent.lock()) {
+			parent->children.push_back(self);
+		}
+
+		return self;
+	}
+
+	void ASTNode::removeSelf() {
+		if (ASTNodePtr parent = weakParent.lock()) {
+			auto self = shared_from_this();
 			for (auto iter = parent->children.begin(); iter != parent->children.end(); ++iter) {
 				if (*iter == self) {
 					parent->children.erase(iter);
@@ -75,13 +88,7 @@ namespace mead {
 			}
 		}
 
-		weakParent = std::move(new_parent);
-
-		if (auto parent = weakParent.lock()) {
-			parent->children.push_back(self);
-		}
-
-		return self;
+		weakParent.reset();
 	}
 
 	std::ostream & ASTNode::debug(std::ostream &stream, size_t padding) const {
