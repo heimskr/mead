@@ -28,7 +28,8 @@ namespace mead {
 			virtual LLVMTypePtr toLLVM() const = 0;
 			virtual bool getConst() const;
 			virtual void setConst(bool);
-			virtual bool isExactlyEquivalent(const Type &) const = 0;
+			virtual bool isExactlyEquivalent(const Type &, bool ignore_const) const = 0;
+			virtual bool isConvertibleTo(const Type &) const;
 			virtual TypePtr unwrapLReference();
 			/** Returns nullptr if the type can't be dereferenced. */
 			virtual TypePtr dereference() const;
@@ -48,7 +49,7 @@ namespace mead {
 			inline int getBitWidth() const { return bitWidth; }
 			std::string getName() const override;
 			TypePtr copy() const override;
-			bool isExactlyEquivalent(const Type &) const override;
+			bool isExactlyEquivalent(const Type &, bool ignore_const) const override;
 			LLVMTypePtr toLLVM() const override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
@@ -59,7 +60,7 @@ namespace mead {
 
 			std::string getName() const override;
 			TypePtr copy() const override;
-			bool isExactlyEquivalent(const Type &) const override;
+			bool isExactlyEquivalent(const Type &, bool ignore_const) const override;
 			LLVMTypePtr toLLVM() const override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
@@ -74,7 +75,8 @@ namespace mead {
 
 			std::string getName() const override;
 			TypePtr copy() const override;
-			bool isExactlyEquivalent(const Type &) const override;
+			bool isExactlyEquivalent(const Type &, bool ignore_const) const override;
+			bool isConvertibleTo(const Type &) const override;
 			LLVMTypePtr toLLVM() const override;
 			TypePtr dereference() const override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
@@ -90,7 +92,8 @@ namespace mead {
 
 			std::string getName() const override;
 			TypePtr copy() const override;
-			bool isExactlyEquivalent(const Type &) const override;
+			bool isExactlyEquivalent(const Type &, bool ignore_const) const override;
+			bool isConvertibleTo(const Type &) const override;
 			LLVMTypePtr toLLVM() const override;
 			TypePtr unwrapLReference() override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
@@ -110,7 +113,7 @@ namespace mead {
 			Namespace & getNamespace() const;
 			std::string getName() const override;
 			TypePtr copy() const override;
-			bool isExactlyEquivalent(const Type &) const override;
+			bool isExactlyEquivalent(const Type &, bool ignore_const) const override;
 			LLVMTypePtr toLLVM() const override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};

@@ -98,7 +98,7 @@ int main(int, char **) {
 
 		fn ext(arg1: i32,  arg2: u8*const&) -> i32;
 
-		global: i32 const = compute();
+		global: i32 = compute();
 		x: i32 const& = global;
 		y: i32 const* = x.&;
 		z: i32 = y.*;

@@ -24,6 +24,13 @@ namespace mead {
 		isConst = value;
 	}
 
+	bool Type::isConvertibleTo(const Type &other) const {
+		if (this == &other)
+			return true;
+
+		return isExactlyEquivalent(other, true);
+	}
+
 	TypePtr Type::unwrapLReference() {
 		return shared_from_this();
 	}
@@ -51,14 +58,14 @@ namespace mead {
 		return std::make_shared<IntType>(*this);
 	}
 
-	bool IntType::isExactlyEquivalent(const Type &other) const {
+	bool IntType::isExactlyEquivalent(const Type &other, bool ignore_const) const {
 		if (this == &other)
 			return true;
 
-		if (getConst() != other.getConst())
+		if (!ignore_const && getConst() != other.getConst())
 			return false;
 
-		if (auto *cast = dynamic_cast<const IntType *>(&other))
+		if (const auto *cast = dynamic_cast<const IntType *>(&other))
 			return cast->bitWidth == bitWidth && cast->isSigned == isSigned;
 
 		return false;
@@ -83,8 +90,8 @@ namespace mead {
 		return std::make_shared<VoidType>();
 	}
 
-	bool VoidType::isExactlyEquivalent(const Type &other) const {
-		return this == &other || (getConst() == other.getConst() && dynamic_cast<const VoidType *>(&other));
+	bool VoidType::isExactlyEquivalent(const Type &other, bool ignore_const) const {
+		return this == &other || ((ignore_const || getConst() == other.getConst()) && dynamic_cast<const VoidType *>(&other));
 	}
 
 	LLVMTypePtr VoidType::toLLVM() const {
@@ -111,15 +118,27 @@ namespace mead {
 		return std::make_shared<PointerType>(subtype);
 	}
 
-	bool PointerType::isExactlyEquivalent(const Type &other) const {
+	bool PointerType::isExactlyEquivalent(const Type &other, bool ignore_const) const {
 		if (this == &other)
 			return true;
 
-		if (getConst() != other.getConst())
+		if (!ignore_const && getConst() != other.getConst())
 			return false;
 
-		if (auto *cast = dynamic_cast<const PointerType *>(&other))
-			return subtype->isExactlyEquivalent(*cast->subtype);
+		if (const auto *cast = dynamic_cast<const PointerType *>(&other))
+			return subtype->isExactlyEquivalent(*cast->subtype, false);
+
+		return false;
+	}
+
+	bool PointerType::isConvertibleTo(const Type &other) const {
+		// TODO: class shenanigans
+
+		if (this == &other)
+			return true;
+
+		if (const auto *cast = dynamic_cast<const PointerType *>(&other))
+			return (!subtype->getConst() || cast->subtype->getConst()) && subtype->isExactlyEquivalent(*cast->subtype, true);
 
 		return false;
 	}
@@ -152,16 +171,28 @@ namespace mead {
 		return std::make_shared<LReferenceType>(subtype);
 	}
 
-	bool LReferenceType::isExactlyEquivalent(const Type &other) const {
+	bool LReferenceType::isExactlyEquivalent(const Type &other, bool ignore_const) const {
 		if (this == &other)
 			return true;
 
 		// Technically, LReferences are basically const by nature, but still...
-		if (getConst() != other.getConst())
+		if (!ignore_const && getConst() != other.getConst())
 			return false;
 
-		if (auto *cast = dynamic_cast<const LReferenceType *>(&other))
-			return subtype->isExactlyEquivalent(*cast->subtype);
+		if (const auto *cast = dynamic_cast<const LReferenceType *>(&other))
+			return subtype->isExactlyEquivalent(*cast->subtype, false);
+
+		return false;
+	}
+
+	bool LReferenceType::isConvertibleTo(const Type &other) const {
+		// TODO: class shenanigans...?
+
+		if (this == &other)
+			return true;
+
+		if (const auto *cast = dynamic_cast<const LReferenceType *>(&other))
+			return (!subtype->getConst() || cast->subtype->getConst()) && subtype->isExactlyEquivalent(*cast->subtype, true);
 
 		return false;
 	}
@@ -206,14 +237,14 @@ namespace mead {
 		return std::make_shared<ClassType>(*this);
 	}
 
-	bool ClassType::isExactlyEquivalent(const Type &other) const {
+	bool ClassType::isExactlyEquivalent(const Type &other, bool ignore_const) const {
 		if (this == &other)
 			return true;
 
-		if (getConst() != other.getConst())
+		if (!ignore_const && getConst() != other.getConst())
 			return false;
 
-		if (auto *cast = dynamic_cast<const ClassType *>(&other))
+		if (const auto *cast = dynamic_cast<const ClassType *>(&other))
 			return cast->name == name && cast->owner.lock() == owner.lock();
 
 		return false;
