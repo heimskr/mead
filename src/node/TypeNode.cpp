@@ -16,7 +16,6 @@ namespace mead {
 		debug();
 
 		for (const ASTNodePtr &child : children) {
-			INFO("[type={}]", child->type);
 			switch (child->type) {
 				case NodeType::Pointer:
 					type = std::make_shared<PointerType>(std::move(type));
@@ -25,6 +24,7 @@ namespace mead {
 					type = std::make_shared<LReferenceType>(std::move(type));
 					break;
 				case NodeType::Const:
+					type = type->copy();
 					type->setConst(true);
 					break;
 				default:

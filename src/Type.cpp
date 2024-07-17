@@ -9,7 +9,6 @@ namespace mead {
 		Symbol(std::move(name)), isConst(is_const) {}
 
 	const char * Type::getConstSuffix() const {
-		INFO("isConst: {}", isConst);
 		return isConst? " const" : "";
 	}
 
@@ -40,6 +39,10 @@ namespace mead {
 		return getNameImpl();
 	}
 
+	TypePtr IntType::copy() const {
+		return std::make_shared<IntType>(*this);
+	}
+
 	LLVMTypePtr IntType::toLLVM() const {
 		return std::make_shared<LLVMIntType>(bitWidth);
 	}
@@ -53,6 +56,10 @@ namespace mead {
 
 	std::string VoidType::getName() const {
 		return "void";
+	}
+
+	TypePtr VoidType::copy() const {
+		return std::make_shared<VoidType>();
 	}
 
 	LLVMTypePtr VoidType::toLLVM() const {
@@ -74,6 +81,11 @@ namespace mead {
 		return getNameImpl();
 	}
 
+	TypePtr PointerType::copy() const {
+		assert(subtype);
+		return std::make_shared<PointerType>(subtype);
+	}
+
 	LLVMTypePtr PointerType::toLLVM() const {
 		return std::make_shared<LLVMPointerType>(subtype->toLLVM());
 	}
@@ -93,7 +105,13 @@ namespace mead {
 		return getNameImpl();
 	}
 
+	TypePtr LReferenceType::copy() const {
+		assert(subtype);
+		return std::make_shared<LReferenceType>(subtype);
+	}
+
 	LLVMTypePtr LReferenceType::toLLVM() const {
+		assert(subtype);
 		return std::make_shared<LLVMPointerType>(subtype->toLLVM());
 	}
 
@@ -116,6 +134,10 @@ namespace mead {
 
 	std::string ClassType::getName() const {
 		return getNameImpl();
+	}
+
+	TypePtr ClassType::copy() const {
+		return std::make_shared<ClassType>(*this);
 	}
 
 	LLVMTypePtr ClassType::toLLVM() const {

@@ -20,6 +20,7 @@ namespace mead {
 			virtual ~Type() = default;
 
 			virtual std::string getName() const = 0;
+			virtual std::shared_ptr<Type> copy() const = 0;
 			virtual operator std::string() const;
 			virtual LLVMTypePtr toLLVM() const = 0;
 			virtual bool getConst() const;
@@ -40,6 +41,7 @@ namespace mead {
 
 			inline int getBitWidth() const { return bitWidth; }
 			std::string getName() const override;
+			TypePtr copy() const override;
 			LLVMTypePtr toLLVM() const override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
@@ -49,6 +51,7 @@ namespace mead {
 			explicit VoidType(bool is_const = false);
 
 			std::string getName() const override;
+			TypePtr copy() const override;
 			LLVMTypePtr toLLVM() const override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
@@ -62,6 +65,7 @@ namespace mead {
 			explicit PointerType(TypePtr subtype, bool is_const = false);
 
 			std::string getName() const override;
+			TypePtr copy() const override;
 			LLVMTypePtr toLLVM() const override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
@@ -75,6 +79,7 @@ namespace mead {
 			explicit LReferenceType(TypePtr subtype, bool is_const = false);
 
 			std::string getName() const override;
+			TypePtr copy() const override;
 			LLVMTypePtr toLLVM() const override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
@@ -83,12 +88,14 @@ namespace mead {
 		private:
 			std::weak_ptr<Namespace> owner;
 			std::string getNameImpl() const;
+			// TODO: fields
 
 		public:
 			ClassType(std::string name, std::weak_ptr<Namespace> owner, bool is_const = false);
 
 			Namespace & getNamespace() const;
 			std::string getName() const override;
+			TypePtr copy() const override;
 			LLVMTypePtr toLLVM() const override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
