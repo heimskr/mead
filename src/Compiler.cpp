@@ -120,11 +120,13 @@ namespace mead {
 
 	TypePtr Compiler::getType(Scope &scope, const ASTNodePtr &node) {
 		auto expression = std::dynamic_pointer_cast<Expression>(node);
+
 		if (!expression) {
-			ERROR("Not an expression:");
-			node->debug();
+			ERROR("Not an expression:\n");
+			node->debug(std::cerr, 4) << '\n';
 			assert(expression);
 		}
+
 		return expression->getType(scope);
 	}
 }

@@ -28,6 +28,10 @@ namespace mead {
 		return shared_from_this();
 	}
 
+	TypePtr Type::dereference() const {
+		return nullptr;
+	}
+
 	char IntType::getPrefix() const {
 		return isSigned? 'i' : 'u';
 	}
@@ -122,6 +126,10 @@ namespace mead {
 
 	LLVMTypePtr PointerType::toLLVM() const {
 		return std::make_shared<LLVMPointerType>(subtype->toLLVM());
+	}
+
+	TypePtr PointerType::dereference() const {
+		return LReferenceType::wrap(subtype);
 	}
 
 	std::format_context::iterator PointerType::formatTo(std::format_context &ctx) const {

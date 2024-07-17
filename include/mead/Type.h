@@ -10,6 +10,9 @@
 namespace mead {
 	class Namespace;
 
+	class Type;
+	using TypePtr = std::shared_ptr<Type>;
+
 	class Type: public Symbol, public Formattable, public std::enable_shared_from_this<Type> {
 		protected:
 			bool isConst = false;
@@ -20,16 +23,17 @@ namespace mead {
 			virtual ~Type() = default;
 
 			virtual std::string getName() const = 0;
-			virtual std::shared_ptr<Type> copy() const = 0;
+			virtual TypePtr copy() const = 0;
 			virtual operator std::string() const;
 			virtual LLVMTypePtr toLLVM() const = 0;
 			virtual bool getConst() const;
 			virtual void setConst(bool);
 			virtual bool isExactlyEquivalent(const Type &) const = 0;
-			virtual std::shared_ptr<Type> unwrapLReference();
+			virtual TypePtr unwrapLReference();
+			/** Returns nullptr if the type can't be dereferenced. */
+			virtual TypePtr dereference() const;
 	};
 
-	using TypePtr = std::shared_ptr<Type>;
 
 	class IntType: public Type {
 		private:
@@ -72,6 +76,7 @@ namespace mead {
 			TypePtr copy() const override;
 			bool isExactlyEquivalent(const Type &) const override;
 			LLVMTypePtr toLLVM() const override;
+			TypePtr dereference() const override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
 

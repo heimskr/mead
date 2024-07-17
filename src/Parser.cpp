@@ -2,7 +2,7 @@
 #include "mead/QualifiedType.h"
 #include "mead/Util.h"
 
-#include "mead/node/Expression.h"
+#include "mead/node/Dereference.h"
 #include "mead/node/FunctionCall.h"
 #include "mead/node/GetAddress.h"
 #include "mead/node/Identifier.h"
@@ -724,7 +724,7 @@ namespace mead {
 			}
 
 			if (const Token *star = take(tokens, Star)) {
-				ASTNodePtr node = ASTNode::make(NodeType::Deref, *star);
+				ASTNodePtr node = std::make_shared<Dereference>(*star);
 				lhs->reparent(node);
 				return log.success(takePrime2(tokens, node), saver);
 			}
