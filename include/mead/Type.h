@@ -117,4 +117,15 @@ namespace mead {
 			LLVMTypePtr toLLVM() const override;
 			std::format_context::iterator formatTo(std::format_context &) const override;
 	};
+
+	class InvalidType: public Type {
+		public:
+			explicit InvalidType(bool is_const = false);
+
+			std::string getName() const override;
+			TypePtr copy() const override;
+			bool isExactlyEquivalent(const Type &, bool ignore_const) const override;
+			LLVMTypePtr toLLVM() const override;
+			std::format_context::iterator formatTo(std::format_context &) const override;
+	};
 }

@@ -93,7 +93,7 @@ int main(int, char **) {
 	example = R"(
 		fn compute() -> i32 {
 			x: i32 = 1;
-			x * 2 + 40;
+			40 + x * 2;
 		}
 
 		fn ext(arg1: i32,  arg2: u8*const&) -> i32;

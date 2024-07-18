@@ -101,4 +101,14 @@ namespace mead {
 	std::format_context::iterator LLVMVoidType::formatTo(std::format_context &ctx) const {
 		return std::format_to(ctx.out(), "void");
 	}
+
+	LLVMPoisonType::LLVMPoisonType() = default;
+
+	bool LLVMPoisonType::operator==(const LLVMType &other) const {
+		return this == &other || dynamic_cast<const LLVMPoisonType *>(&other);
+	}
+
+	std::format_context::iterator LLVMPoisonType::formatTo(std::format_context &ctx) const {
+		return std::format_to(ctx.out(), "poison");
+	}
 }

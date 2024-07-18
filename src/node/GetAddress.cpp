@@ -16,4 +16,8 @@ namespace mead {
 		assert(subtype);
 		return std::make_shared<PointerType>(std::move(subtype));
 	}
+
+	bool GetAddress::isConstant(const Scope &) const {
+		return false;
+	}
 }

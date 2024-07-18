@@ -11,5 +11,6 @@ namespace mead {
 			ASTNodePtr getArgs() const;
 
 			std::shared_ptr<Type> getType(const Scope &) const override;
+			bool isConstant(const Scope &) const override;
 	};
 }

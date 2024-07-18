@@ -76,7 +76,6 @@ namespace mead {
 		if (is_definition) {
 			TypePtr expr_type = getType(*scope, node->at(1));
 			if (expr_type && !expr_type->isConvertibleTo(*stated_type)) {
-				// TODO: coercion
 				throw TypeError(std::move(expr_type), std::move(stated_type));
 			}
 		}

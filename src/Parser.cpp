@@ -2,6 +2,7 @@
 #include "mead/QualifiedType.h"
 #include "mead/Util.h"
 
+#include "mead/node/Binary.h"
 #include "mead/node/Dereference.h"
 #include "mead/node/FunctionCall.h"
 #include "mead/node/GetAddress.h"
@@ -896,7 +897,7 @@ namespace mead {
 		for (TokenType token_type : {Star, Slash, Percent}) {
 			if (const Token *token = take(tokens, token_type)) {
 				if (ParseResult rhs = takeExpression3(tokens)) {
-					ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
+					ASTNodePtr node = std::make_shared<Binary>(*token);
 					lhs->reparent(node);
 					(*rhs)->reparent(node);
 					return log.success(takePrime4(tokens, node), saver);
@@ -931,7 +932,7 @@ namespace mead {
 		for (TokenType token_type : {Plus, Minus}) {
 			if (const Token *token = take(tokens, token_type)) {
 				if (ParseResult rhs = takeExpression4(tokens)) {
-					ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
+					ASTNodePtr node = std::make_shared<Binary>(*token);
 					lhs->reparent(node);
 					(*rhs)->reparent(node);
 					return log.success(takePrime5(tokens, node), saver);
@@ -966,7 +967,7 @@ namespace mead {
 		for (TokenType token_type : {LeftShift, RightShift}) {
 			if (const Token *token = take(tokens, token_type)) {
 				if (ParseResult rhs = takeExpression5(tokens)) {
-					ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
+					ASTNodePtr node = std::make_shared<Binary>(*token);
 					lhs->reparent(node);
 					(*rhs)->reparent(node);
 					return log.success(takePrime6(tokens, node), saver);
@@ -1000,7 +1001,7 @@ namespace mead {
 		// "<=>" E6 E7'
 		if (const Token *token = take(tokens, Spaceship)) {
 			if (ParseResult rhs = takeExpression6(tokens)) {
-				ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
+				ASTNodePtr node = std::make_shared<Binary>(*token);
 				lhs->reparent(node);
 				(*rhs)->reparent(node);
 				return log.success(takePrime7(tokens, node), saver);
@@ -1034,7 +1035,7 @@ namespace mead {
 		for (TokenType token_type : {OpeningAngle, Leq, ClosingAngle, Geq}) {
 			if (const Token *token = take(tokens, token_type)) {
 				if (ParseResult rhs = takeExpression7(tokens)) {
-					ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
+					ASTNodePtr node = std::make_shared<Binary>(*token);
 					lhs->reparent(node);
 					(*rhs)->reparent(node);
 					return log.success(takePrime8(tokens, node), saver);
@@ -1069,7 +1070,7 @@ namespace mead {
 		for (TokenType token_type : {DoubleEquals, NotEqual}) {
 			if (const Token *token = take(tokens, token_type)) {
 				if (ParseResult rhs = takeExpression8(tokens)) {
-					ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
+					ASTNodePtr node = std::make_shared<Binary>(*token);
 					lhs->reparent(node);
 					(*rhs)->reparent(node);
 					return log.success(takePrime9(tokens, node), saver);
@@ -1103,7 +1104,7 @@ namespace mead {
 		// "&" E9 E10'
 		if (const Token *token = take(tokens, Ampersand)) {
 			if (ParseResult rhs = takeExpression9(tokens)) {
-				ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
+				ASTNodePtr node = std::make_shared<Binary>(*token);
 				lhs->reparent(node);
 				(*rhs)->reparent(node);
 				return log.success(takePrime10(tokens, node), saver);
@@ -1136,7 +1137,7 @@ namespace mead {
 		// "^" E10 E11'
 		if (const Token *token = take(tokens, Xor)) {
 			if (ParseResult rhs = takeExpression10(tokens)) {
-				ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
+				ASTNodePtr node = std::make_shared<Binary>(*token);
 				lhs->reparent(node);
 				(*rhs)->reparent(node);
 				return log.success(takePrime11(tokens, node), saver);
@@ -1169,7 +1170,7 @@ namespace mead {
 		// "|" E11 E12'
 		if (const Token *token = take(tokens, Pipe)) {
 			if (ParseResult rhs = takeExpression11(tokens)) {
-				ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
+				ASTNodePtr node = std::make_shared<Binary>(*token);
 				lhs->reparent(node);
 				(*rhs)->reparent(node);
 				return log.success(takePrime12(tokens, node), saver);
@@ -1202,7 +1203,7 @@ namespace mead {
 		// "&&" E12 E13'
 		if (const Token *token = take(tokens, DoubleAmpersand)) {
 			if (ParseResult rhs = takeExpression12(tokens)) {
-				ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
+				ASTNodePtr node = std::make_shared<Binary>(*token);
 				lhs->reparent(node);
 				(*rhs)->reparent(node);
 				return log.success(takePrime13(tokens, node), saver);
@@ -1235,7 +1236,7 @@ namespace mead {
 		// "||" E13 E14'
 		if (const Token *token = take(tokens, DoublePipe)) {
 			if (ParseResult rhs = takeExpression13(tokens)) {
-				ASTNodePtr node = ASTNode::make(NodeType::Binary, *token);
+				ASTNodePtr node = std::make_shared<Binary>(*token);
 				lhs->reparent(node);
 				(*rhs)->reparent(node);
 				return log.success(takePrime14(tokens, node), saver);

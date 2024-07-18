@@ -8,5 +8,6 @@ namespace mead {
 			GetAddress(Token);
 
 			std::shared_ptr<Type> getType(const Scope &) const override;
+			bool isConstant(const Scope &) const;
 	};
 }

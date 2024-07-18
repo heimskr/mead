@@ -23,4 +23,9 @@ namespace mead {
 
 		return {};
 	}
+
+	bool FunctionCall::isConstant(const Scope &) const {
+		// TODO: allow certain functions to be evaluated at compile time
+		return false;
+	}
 }

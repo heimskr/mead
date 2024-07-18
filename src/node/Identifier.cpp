@@ -17,4 +17,9 @@ namespace mead {
 
 		throw ResolutionError(token.value);
 	}
+
+	bool Identifier::isConstant(const Scope &) const {
+		// TODO: allow certain identifiers to be evaluated at compile time
+		return false;
+	}
 }

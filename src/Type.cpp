@@ -258,4 +258,27 @@ namespace mead {
 	std::format_context::iterator ClassType::formatTo(std::format_context &ctx) const {
 		return std::format_to(ctx.out(), "class {}", getNameImpl());
 	}
+
+	InvalidType::InvalidType(bool is_const):
+		Type("<error>", is_const) {}
+
+	std::string InvalidType::getName() const {
+		return "<error>";
+	}
+
+	TypePtr InvalidType::copy() const {
+		return std::make_shared<InvalidType>();
+	}
+
+	bool InvalidType::isExactlyEquivalent(const Type &other, bool ignore_const) const {
+		return this == &other || ((ignore_const || getConst() == other.getConst()) && dynamic_cast<const InvalidType *>(&other));
+	}
+
+	LLVMTypePtr InvalidType::toLLVM() const {
+		return std::make_shared<LLVMPoisonType>();
+	}
+
+	std::format_context::iterator InvalidType::formatTo(std::format_context &ctx) const {
+		return std::format_to(ctx.out(), "<error>");
+	}
 }

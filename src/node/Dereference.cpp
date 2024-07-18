@@ -16,4 +16,9 @@ namespace mead {
 		assert(subtype);
 		return subtype->dereference();
 	}
+
+	bool Dereference::isConstant(const Scope &) const {
+		// Maybe it could be allowed for string literals...?
+		return false;
+	}
 }
