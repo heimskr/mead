@@ -92,7 +92,7 @@ namespace mead {
 		const bool is_declaration = node->type == NodeType::FunctionDeclaration;
 		const bool is_definition  = node->type == NodeType::FunctionDefinition;
 
-		node->debug(INFO("Function:\n"), 4) << '\n';
+		// node->debug(INFO("Function:\n"), 4) << '\n';
 
 		assert(is_declaration || is_definition);
 
@@ -122,7 +122,9 @@ namespace mead {
 		if (is_definition) {
 			auto block = std::dynamic_pointer_cast<Block>(node->at(1));
 			assert(block);
-			block->compile(*this, *function, function->getScope(), function->addBlock());
+			if (!block->compile(*this, *function, *function->getScope(), function->addBlock())) {
+				ERROR("Failed to compile function {}", name);
+			}
 		}
 
 		return std::format("[\x1b[2mfunction.\x1b[22m {}]", function);

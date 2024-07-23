@@ -1,5 +1,6 @@
 #pragma once
 
+#include <charconv>
 #include <format>
 #include <string>
 #include <sstream>
@@ -31,6 +32,39 @@ namespace mead {
 			}
 		}
 		return out.str();
+	}
+
+	template <std::integral I>
+#ifdef MEAD_PARSENUMBER_DECLARED
+	I parseNumber(std::string_view view, int base) {
+#else
+	I parseNumber(std::string_view view, int base = 10) {
+#endif
+#define MEAD_PARSENUMBER_DECLARED
+		I out{};
+		auto result = std::from_chars(view.begin(), view.end(), out, base);
+		if (result.ec == std::errc::invalid_argument)
+			throw std::invalid_argument("Not an integer: \"" + std::string(view) + "\"");
+		return out;
+	}
+
+	template <std::floating_point F>
+	F parseNumber(std::string_view view) {
+#if defined(__APPLE__) && defined(__clang__)
+		// Current Clang on macOS seems to hate from_chars for floating point types.
+		std::string str(view);
+		char *endptr = nullptr;
+		double out = strtod(str.c_str(), &endptr);
+		if (str.c_str() + str.size() != endptr)
+			throw std::invalid_argument("Not a floating point: \"" + str + "\"");
+		return out;
+#else
+		F out{};
+		auto result = std::from_chars(view.begin(), view.end(), out);
+		if (result.ec == std::errc::invalid_argument)
+			throw std::invalid_argument("Not a floating point: \"" + std::string(view) + "\"");
+		return out;
+#endif
 	}
 
 	template <typename T>

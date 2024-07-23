@@ -12,6 +12,8 @@ namespace mead {
 		public:
 			VariableDefinition(Token token);
 
+			const std::string & getVariableName() const;
 			std::shared_ptr<Expression> getExpression() const;
+			bool compile(Compiler &, Function &, Scope &, std::shared_ptr<BasicBlock>) final;
 	};
 }

@@ -21,12 +21,12 @@ namespace mead {
 			std::shared_ptr<BasicBlock> entryBlock;
 			std::shared_ptr<BasicBlock> exitBlock;
 			std::vector<std::shared_ptr<BasicBlock>> blocks;
-			Scope scope;
+			std::shared_ptr<Scope> scope;
 
 			void initBlocks();
 
 		public:
-			Function(std::weak_ptr<Program> program, std::string name, std::shared_ptr<Type> return_type, std::vector<std::shared_ptr<Type>> argument_types);
+			Function(const std::shared_ptr<Program> &program, std::string name, std::shared_ptr<Type> return_type, std::vector<std::shared_ptr<Type>> argument_types);
 
 			Function(const Function &) = delete;
 			Function(Function &&) = delete;

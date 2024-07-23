@@ -8,6 +8,7 @@
 #include "mead/node/FunctionCall.h"
 #include "mead/node/GetAddress.h"
 #include "mead/node/Identifier.h"
+#include "mead/node/Number.h"
 #include "mead/node/Return.h"
 #include "mead/node/TypeNode.h"
 #include "mead/node/VariableDefinition.h"
@@ -242,7 +243,7 @@ namespace mead {
 			}
 		}
 
-		return log.success(ASTNode::make(NodeType::Number, *number));
+		return log.success(std::make_shared<Number>(*number));
 	}
 
 	ParseResult Parser::takeString(std::span<const Token> &tokens) {
