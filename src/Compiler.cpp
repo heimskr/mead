@@ -1,4 +1,5 @@
 #include "mead/error/TypeError.h"
+#include "mead/node/Block.h"
 #include "mead/node/Expression.h"
 #include "mead/node/Identifier.h"
 #include "mead/node/TypeNode.h"
@@ -114,9 +115,15 @@ namespace mead {
 		}
 
 		std::string name = identifier->getIdentifier();
-		auto function = std::make_shared<Function>(name, std::move(return_type), std::move(argument_types));
+		auto function = std::make_shared<Function>(program, name, std::move(return_type), std::move(argument_types));
 		bool inserted = ns->insertFunction(name, function);
 		assert(inserted);
+
+		if (is_definition) {
+			auto block = std::dynamic_pointer_cast<Block>(node->at(1));
+			assert(block);
+			block->compile(*this, *function, function->getScope(), function->addBlock());
+		}
 
 		return std::format("[\x1b[2mfunction.\x1b[22m {}]", function);
 	}

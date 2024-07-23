@@ -8,6 +8,8 @@
 #include "mead/Type.h"
 
 namespace mead {
+	class BasicBlock;
+	class Function;
 	class Scope;
 	class TypeNode;
 
@@ -27,7 +29,6 @@ namespace mead {
 			CompilerResult compileFunction(const ASTNodePtr &);
 
 			TypePtr getType(Scope &, const ASTNodePtr &expression);
-
-			TypePtr getType(const TypeNode &);
+			TypePtr getType(Scope &, const TypeNode &);
 	};
 }

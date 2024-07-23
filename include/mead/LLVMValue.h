@@ -2,6 +2,7 @@
 
 #include "mead/Formattable.h"
 #include "mead/LLVMType.h"
+#include "mead/Value.h"
 
 #include <concepts>
 #include <format>
@@ -9,7 +10,7 @@
 #include <string>
 
 namespace mead {
-	class LLVMValue: public Formattable {
+	class LLVMValue: public Value, public Formattable {
 		protected:
 			LLVMValue() = default;
 

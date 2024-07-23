@@ -84,6 +84,22 @@ namespace mead {
 					throw std::out_of_range("ASTNode has no children");
 				return children.back();
 			}
+
+			inline auto begin() {
+				return children.begin();
+			}
+
+			inline auto end() {
+				return children.end();
+			}
+
+			inline auto begin() const {
+				return children.begin();
+			}
+
+			inline auto end() const {
+				return children.end();
+			}
 	};
 
 	using ASTNodePtr = std::shared_ptr<ASTNode>;

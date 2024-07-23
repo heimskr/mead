@@ -3,12 +3,14 @@
 #include "mead/Util.h"
 
 #include "mead/node/Binary.h"
+#include "mead/node/Block.h"
 #include "mead/node/Dereference.h"
 #include "mead/node/FunctionCall.h"
 #include "mead/node/GetAddress.h"
 #include "mead/node/Identifier.h"
 #include "mead/node/Return.h"
 #include "mead/node/TypeNode.h"
+#include "mead/node/VariableDefinition.h"
 
 #include <array>
 #include <cassert>
@@ -323,7 +325,7 @@ namespace mead {
 			return log.fail("No '{'", tokens);
 		}
 
-		ASTNodePtr node = ASTNode::make(NodeType::Block, token_saver->front());
+		ASTNodePtr node = std::make_shared<Block>(token_saver->front());
 
 		while (!take(tokens, TokenType::ClosingBrace)) {
 			ParseResult statement = takeStatement(tokens);
@@ -526,7 +528,7 @@ namespace mead {
 			return log.fail("No ';'", tokens);
 		}
 
-		ASTNodePtr node = ASTNode::make(NodeType::VariableDefinition, *equals);
+		ASTNodePtr node = std::make_shared<VariableDefinition>(*equals);
 		(*variable)->reparent(node);
 		(*expr)->reparent(node);
 
